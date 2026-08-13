@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1786555543969,
+      "tag": "0000_clear_yellow_claw",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1786556010616,
+      "tag": "0001_ordinary_iceman",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786566857705,
+      "tag": "0002_sloppy_wild_child",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1786567190508,
+      "tag": "0003_absent_pet_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786567413458,
+      "tag": "0004_hard_valeria_richards",
+      "breakpoints": true
+    }
+  ]
+}
