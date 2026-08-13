@@ -68,8 +68,8 @@
 
 # Delivery — braillehelp repository
 
-- [ ] Inspect the current active app, legacy folders, and target GitHub repository state.
-- [ ] Assemble a clean runnable repository with active app source, necessary configuration, legacy code organized safely, and generated artifacts excluded.
-- [ ] Add root README and environment/run instructions for local development.
-- [ ] Create the new `braillehelp` GitHub repository and push the assembled code.
-- [ ] Verify the remote branch, repository tree, and runnable project commands.
+- [x] Inspect the current active app, legacy folders, and target GitHub repository state.
+- [x] Assemble a clean runnable repository with active app source, necessary configuration, legacy code organized safely, and generated artifacts excluded.
+- [x] Add root README and environment/run instructions for local development.
+- [x] Create the new `braillehelp` GitHub repository and push the assembled code.
+- [x] Verify the remote branch, repository tree, and runnable project commands.
