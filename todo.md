@@ -82,3 +82,10 @@
 - [x] Ensure camera permission, visible video preview, 2D finger-motion telemetry, speed, reread, and skipped-region metrics work in a real browser session.
 - [x] Add focused regression and integration coverage for login guards, analysis, camera metrics, and API contracts.
 - [x] Run final build after all local-runtime changes; browser smoke verification is complete and checkpoint/push are the remaining delivery actions.
+
+# Final Verification Follow-ups
+
+- [x] Add client-side regression coverage for the `/api/dev-login` fallback redirect when OAuth configuration is absent.
+- [x] Add integration-style coverage proving analyzed passage text persists and is usable by a reading session.
+- [x] Document that the sandbox browser cannot provide a physical camera permission/feed, while recording the verified camera UI surface.
+- [ ] Save a fresh managed checkpoint after the final verification changes.

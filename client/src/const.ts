@@ -14,11 +14,22 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // stash across renders.
 export const getLoginMode = () => (import.meta.env.VITE_OAUTH_PORTAL_URL && import.meta.env.VITE_APP_ID ? "oauth" : "development") as "oauth" | "development";
 
+export const getLoginDestination = (config: { oauthPortalUrl?: string; appId?: string }, location: Pick<Location, "origin" | "pathname" | "search">) => {
+  if (!config.oauthPortalUrl || !config.appId) return `/api/dev-login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;
+  const redirectUri = `${location.origin}/api/oauth/callback`;
+  const url = new URL(`${config.oauthPortalUrl}/app-auth`);
+  url.searchParams.set("appId", config.appId);
+  url.searchParams.set("redirectUri", redirectUri);
+  url.searchParams.set("type", "signIn");
+  return url.toString();
+};
+
 export const startLogin = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
-  if (!oauthPortalUrl || !appId) {
-    window.location.href = `/api/dev-login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+  const destination = getLoginDestination({ oauthPortalUrl, appId }, window.location);
+  if (destination.startsWith("/api/dev-login")) {
+    window.location.href = destination;
     return;
   }
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
@@ -27,11 +38,7 @@ export const startLogin = () => {
   document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
   const state = encodeOAuthState({ redirectUri, nonce });
 
-  const url = new URL(`${oauthPortalUrl}/app-auth`);
-  url.searchParams.set("appId", appId);
-  url.searchParams.set("redirectUri", redirectUri);
+  const url = new URL(destination);
   url.searchParams.set("state", state);
-  url.searchParams.set("type", "signIn");
-
   window.location.href = url.toString();
 };

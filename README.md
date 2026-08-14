@@ -59,6 +59,8 @@ Generated folders such as `.vite`, `dist`, `node_modules`, logs, and TypeScript 
 
 The camera overlay currently estimates a 2D motion centroid from frame-to-frame pixel changes. It is useful for demonstrating observable movement and session telemetry, but it is not a validated anatomical finger-tip detector. Replace or supplement it with a validated hand-landmark model before using measurements for instructional or clinical decisions.
 
+The final browser smoke test verified the sign-in entry point, development fallback route, passage-required guard, and navigation into the reading-session surface. The sandbox browser cannot grant a physical camera device, so the final smoke test did not claim live camera permission or real finger-motion capture; validate those two steps on a localhost or HTTPS device with a camera before collecting student data.
+
 ## Privacy
 
 Camera movement telemetry, oral-reading recordings, transcriptions, and student-linked session data are consent-gated and owner-scoped. Use the in-app privacy controls to set retention windows, purge expired data, or delete student records. Review the project documentation before collecting real student data.
