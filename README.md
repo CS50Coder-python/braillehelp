@@ -43,7 +43,7 @@ Then set `LOCAL_AI_URL=http://127.0.0.1:8000` in `.env`. The active server uploa
 
 ## Environment
 
-Do not commit `.env` files or secrets. In the managed environment, database, authentication, storage, and built-in AI variables are injected by the platform. For local development, copy `.env.example` to `.env` and provide a MySQL-compatible `DATABASE_URL` plus the required authentication and AI/storage variables.
+Do not commit `.env` files or secrets. This repository does not include a committed `.env.example`; create a local `.env` file yourself or export the variables in your shell. In the managed environment, database, authentication, storage, and built-in AI variables are injected by the platform. For standalone development, use `DEV_AUTH_ENABLED=true`, `JWT_SECRET` (or the development fallback), and either the managed Forge variables `BUILT_IN_FORGE_API_URL` plus `BUILT_IN_FORGE_API_KEY`, or start `legacy/local-ai` on port 8000. Set `LOCAL_AI_URL=http://127.0.0.1:8000` only when that service is running. Set `OAUTH_SERVER_URL`, `VITE_APP_ID`, and `VITE_OAUTH_PORTAL_URL` only when enabling real Manus OAuth; local development login does not require them.
 
 After schema changes, generate and apply the Drizzle migration using the project’s database workflow. Do not run destructive database commands against production data without a reviewed migration.
 
