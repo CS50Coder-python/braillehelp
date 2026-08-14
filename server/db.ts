@@ -4,6 +4,8 @@ import { InsertUser, users, students, passages, brailleAnalyses, oralReadings, r
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+const memory = { users: [] as any[], students: [] as any[], passages: [] as any[], analyses: [] as any[], oralReadings: [] as any[], sessions: [] as any[], events: [] as any[], nextStudentId: 1, nextPassageId: 1, nextSessionId: 1, nextOralId: 1, nextEventId: 1 };
+const useMemoryStore = () => !ENV.databaseUrl && !ENV.isProduction;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -29,74 +31,81 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return useMemoryStore() ? memory.users.find((user) => user.openId === openId) : undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
 }
 
 export async function createStudent(input: typeof students.$inferInsert) {
   const db = await getDb();
-  if (!db) throw new Error("Database is not configured");
+  if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); const row = { ...input, id: memory.nextStudentId++, createdAt: new Date(), updatedAt: new Date() }; memory.students.push(row); return row.id; }
   const result = await db.insert(students).values(input);
   return Number(result[0].insertId);
 }
 
 export async function getStudents(ownerUserId: number, limit = 50) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return useMemoryStore() ? memory.students.filter((student) => student.ownerUserId === ownerUserId).slice(0, limit) : [];
   return db.select().from(students).where(eq(students.ownerUserId, ownerUserId)).orderBy(desc(students.createdAt)).limit(limit);
 }
 
 export async function getPassage(id: number, ownerUserId?: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) return useMemoryStore() ? memory.passages.find((passage) => passage.id === id && (ownerUserId === undefined || passage.ownerUserId === ownerUserId)) ?? null : null;
   const rows = await db.select().from(passages).where(ownerUserId ? and(eq(passages.id, id), eq(passages.ownerUserId, ownerUserId)) : eq(passages.id, id)).limit(1);
   return rows[0] ?? null;
 }
 
 export async function createPassage(input: typeof passages.$inferInsert) {
   const db = await getDb();
-  if (!db) throw new Error("Database is not configured");
+  if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); const row = { ...input, id: memory.nextPassageId++, createdAt: new Date(), updatedAt: new Date() }; memory.passages.push(row); return row.id; }
   const result = await db.insert(passages).values(input);
   return Number(result[0].insertId);
 }
 
+export async function updatePassageText(id: number, detectedText: string, expectedWordCount: number) {
+  const db = await getDb();
+  if (!db) { if (!useMemoryStore()) return; const passage = memory.passages.find((item) => item.id === id); if (passage) Object.assign(passage, { detectedText, expectedWordCount, updatedAt: new Date() }); return; }
+  await db.update(passages).set({ detectedText, expectedWordCount }).where(eq(passages.id, id));
+}
+
 export async function saveBrailleAnalysis(input: typeof brailleAnalyses.$inferInsert) {
   const db = await getDb();
-  if (!db) throw new Error("Database is not configured");
+  if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); memory.analyses.push({ ...input, id: memory.analyses.length + 1, createdAt: new Date() }); return; }
   await db.insert(brailleAnalyses).values(input);
 }
 
 export async function saveOralReading(input: typeof oralReadings.$inferInsert) {
   const db = await getDb();
-  if (!db) throw new Error("Database is not configured");
+  if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); const row = { ...input, id: memory.nextOralId++, createdAt: new Date() }; memory.oralReadings.push(row); return row.id; }
   const result = await db.insert(oralReadings).values(input);
   return Number(result[0].insertId);
 }
 
 export async function getOralReading(sessionId: number, ownerUserId: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) return useMemoryStore() ? memory.oralReadings.filter((reading) => reading.sessionId === sessionId && reading.ownerUserId === ownerUserId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null : null;
   const rows = await db.select().from(oralReadings).where(and(eq(oralReadings.sessionId, sessionId), eq(oralReadings.ownerUserId, ownerUserId))).orderBy(desc(oralReadings.createdAt)).limit(1);
   return rows[0] ?? null;
 }
 
 export async function createReadingSession(input: typeof readingSessions.$inferInsert) {
   const db = await getDb();
-  if (!db) throw new Error("Database is not configured");
+  if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); const row = { ...input, id: memory.nextSessionId++, createdAt: new Date(), updatedAt: new Date() }; memory.sessions.push(row); return row.id; }
   const result = await db.insert(readingSessions).values(input);
   return Number(result[0].insertId);
 }
 
 export async function updateReadingSession(id: number, input: Partial<typeof readingSessions.$inferInsert>) {
   const db = await getDb();
-  if (!db) throw new Error("Database is not configured");
+  if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); const row = memory.sessions.find((session) => session.id === id); if (row) Object.assign(row, input, { updatedAt: new Date() }); return; }
   await db.update(readingSessions).set(input).where(eq(readingSessions.id, id));
 }
 
 export async function addTrackingEvents(events: Array<typeof trackingEvents.$inferInsert>) {
   const db = await getDb();
-  if (!db || events.length === 0) return;
+  if (!db) { if (!useMemoryStore()) return; memory.events.push(...events.map((event) => ({ ...event, id: memory.nextEventId++, createdAt: new Date() }))); return; }
+  if (events.length === 0) return;
   const sessionIds = Array.from(new Set(events.map((event) => event.sessionId)));
   const sessions = await db.select({ id: readingSessions.id, expiresAt: readingSessions.expiresAt }).from(readingSessions).where(sql`${readingSessions.id} in (${sql.join(sessionIds.map((id) => sql`${id}`), sql`, `)})`);
   const expiryBySession = new Map(sessions.map((session) => [session.id, session.expiresAt]));
@@ -105,13 +114,13 @@ export async function addTrackingEvents(events: Array<typeof trackingEvents.$inf
 
 export async function getRecentSessions(ownerUserId: number, limit = 10) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return useMemoryStore() ? memory.sessions.filter((session) => session.ownerUserId === ownerUserId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit) : [];
   return db.select().from(readingSessions).where(eq(readingSessions.ownerUserId, ownerUserId)).orderBy(desc(readingSessions.createdAt)).limit(limit);
 }
 
 export async function getSessionWithEvents(id: number, ownerUserId: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) { const session = useMemoryStore() ? memory.sessions.find((item) => item.id === id && item.ownerUserId === ownerUserId) : null; if (!session) return null; return { session, events: memory.events.filter((event) => event.sessionId === id), oralReading: await getOralReading(id, ownerUserId) }; }
   const session = await db.select().from(readingSessions).where(and(eq(readingSessions.id, id), eq(readingSessions.ownerUserId, ownerUserId))).limit(1);
   if (!session[0]) return null;
   const events = await db.select().from(trackingEvents).where(eq(trackingEvents.sessionId, id)).orderBy(trackingEvents.timestampMs);
@@ -199,7 +208,7 @@ export async function purgeExpiredData(ownerUserId: number) {
 
 export async function getClassroomSummary(ownerUserId: number) {
   const db = await getDb();
-  if (!db) return { activeReaders: 0, averageSpeed: 0, averageCoverage: 0, minutesPracticed: 0 };
+  if (!db) { const completed = useMemoryStore() ? memory.sessions.filter((session) => session.ownerUserId === ownerUserId && session.status === "completed") : []; return { activeReaders: completed.length, averageSpeed: completed.length ? Math.round(completed.reduce((sum, session) => sum + Number(session.readingSpeedWpm ?? 0), 0) / completed.length) : 0, averageCoverage: completed.length ? Math.round(completed.reduce((sum, session) => sum + Number(session.trackingCoverage ?? 0), 0) / completed.length) : 0, minutesPracticed: Math.round(completed.reduce((sum, session) => sum + Number(session.elapsedMs ?? 0), 0) / 60000) }; }
   const rows = await db.select({
     count: sql<number>`count(*)`,
     averageSpeed: sql<number>`coalesce(avg(${readingSessions.readingSpeedWpm}), 0)`,

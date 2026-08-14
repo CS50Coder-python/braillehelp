@@ -12,9 +12,15 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // call would desync it from an in-flight login and the callback would reject it
 // with "invalid oauth state". It returns void by design, so there is no URL to
 // stash across renders.
+export const getLoginMode = () => (import.meta.env.VITE_OAUTH_PORTAL_URL && import.meta.env.VITE_APP_ID ? "oauth" : "development") as "oauth" | "development";
+
 export const startLogin = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
+  if (!oauthPortalUrl || !appId) {
+    window.location.href = `/api/dev-login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    return;
+  }
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
 
   const nonce = crypto.randomUUID();

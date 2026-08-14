@@ -7,9 +7,10 @@ import { TRPCError } from "@trpc/server";
 import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storageGetSignedUrl, storagePut } from "./storage";
+import { ENV } from "./_core/env";
 import {
   addTrackingEvents, createPassage, createReadingSession, createStudent, deleteSessionData, deleteStudentData, getClassroomSummary, getOralReading, getPassage,
-  getRecentSessions, getSessionWithEvents, getStudents, purgeExpiredData, saveBrailleAnalysis, saveOralReading, setStudentRetention, updateReadingSession,
+  getRecentSessions, getSessionWithEvents, getStudents, purgeExpiredData, saveBrailleAnalysis, saveOralReading, setStudentRetention, updatePassageText, updateReadingSession,
 } from "./db";
 
 const analysisSchema = { type: "object", properties: { text: { type: "string" }, confidence: { type: "number" }, brailleStandard: { type: "string" }, warnings: { type: "array", items: { type: "string" } }, cellCount: { type: "integer" }, lineCount: { type: "integer" } }, required: ["text", "confidence", "brailleStandard", "warnings", "cellCount", "lineCount"], additionalProperties: false } as const;
@@ -17,6 +18,15 @@ function extractText(content: unknown) { if (typeof content === "string") return
 function normalizeText(value: string) { return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim(); }
 export function compareTexts(expected: string, transcript: string) { const expectedWords = normalizeText(expected).split(" ").filter(Boolean); const spokenWords = normalizeText(transcript).split(" ").filter(Boolean); const mismatches: string[] = []; const total = Math.max(expectedWords.length, spokenWords.length); for (let index = 0; index < total; index += 1) if (expectedWords[index] !== spokenWords[index]) mismatches.push(`word ${index + 1}: expected “${expectedWords[index] ?? "<missing>"}”, heard “${spokenWords[index] ?? "<missing>"}”`); return { matchScore: total ? Math.max(0, Math.round(((total - mismatches.length) / total) * 100)) : 0, mismatches }; }
 async function requireOwnedSession(sessionId: number, ownerUserId: number) { const detail = await getSessionWithEvents(sessionId, ownerUserId); if (!detail?.session) throw new TRPCError({ code: "NOT_FOUND", message: "Reading session not found." }); return detail; }
+export async function analyzeWithLocalAi(data: Buffer, mimeType: string, endpoint = ENV.localAiUrl) {
+  if (!endpoint) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set LOCAL_AI_URL or the managed Forge AI variables before analyzing Braille images." });
+  const form = new FormData();
+  form.append("image", new Blob([new Uint8Array(data)], { type: mimeType }), "braille-page");
+  const response = await fetch(`${endpoint.replace(/\/$/, "")}/scan`, { method: "POST", body: form });
+  if (!response.ok) throw new TRPCError({ code: "BAD_GATEWAY", message: `Local Braille AI returned HTTP ${response.status}. Start the service from legacy/local-ai before uploading.` });
+  const payload = await response.json() as { text?: string; confidence?: number; brailleStandard?: string; warnings?: string[]; lines?: unknown[]; cellCount?: number; lineCount?: number };
+  return { text: payload.text ?? "", confidence: payload.confidence ?? 0, brailleStandard: payload.brailleStandard ?? "UEB_UNCONTRACTED", warnings: payload.warnings ?? [], cellCount: payload.cellCount ?? 0, lineCount: payload.lineCount ?? payload.lines?.length ?? 0 };
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -39,10 +49,9 @@ export const appRouter = router({
   braille: router({
     analyzeImage: protectedProcedure.input(z.object({ title: z.string().trim().min(1).max(255), studentId: z.number().int().positive().optional(), fileName: z.string().trim().min(1).max(255), mimeType: z.enum(["image/png", "image/jpeg", "image/webp"]), dataUrl: z.string().startsWith("data:image/").max(20_000_000) })).mutation(async ({ input, ctx }) => {
       const base64 = input.dataUrl.split(",")[1]; if (!base64) throw new Error("The uploaded image did not contain image data.");
-      const buffer = Buffer.from(base64, "base64"); const fileKey = `braille-passages/${ctx.user.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-")}`; const stored = await storagePut(fileKey, buffer, input.mimeType);
+      const buffer = Buffer.from(base64, "base64"); const fileKey = `braille-passages/${ctx.user.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-")}`; const stored = ENV.forgeApiUrl && ENV.forgeApiKey ? await storagePut(fileKey, buffer, input.mimeType) : { key: `local://${fileKey}`, url: "" };
       const passageId = await createPassage({ ownerUserId: ctx.user.id, studentId: input.studentId ?? null, title: input.title, sourceFileKey: stored.key, sourceMimeType: input.mimeType });
-      const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "You are a cautious Braille image analysis service. Read only clearly visible Braille cells. Do not invent missing cells. This is an assistive prototype, not a clinical or educational assessment. Return the requested JSON only." }, { role: "user", content: [{ type: "text", text: "Analyze this uploaded Braille page. Identify visible uncontracted or contracted Braille only when the image supports it. Report uncertainty in warnings. Count visible cells and lines." }, { type: "image_url", image_url: { url: input.dataUrl, detail: "high" } }] }], response_format: { type: "json_schema", json_schema: { name: "braille_analysis", strict: true, schema: analysisSchema } } });
-      const raw = extractText(response.choices[0]?.message?.content); const result = JSON.parse(raw) as { text: string; confidence: number; brailleStandard: string; warnings: string[]; cellCount: number; lineCount: number }; const expectedWordCount = result.text.trim() ? result.text.trim().split(/\s+/).length : 0;
+      const result = ENV.localAiUrl ? await analyzeWithLocalAi(buffer, input.mimeType) : await (async () => { if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Braille analysis is not configured. Set LOCAL_AI_URL for the local service or the managed Forge AI variables." }); const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "You are a cautious Braille image analysis service. Read only clearly visible Braille cells. Do not invent missing cells. This is an assistive prototype, not a clinical or educational assessment. Return the requested JSON only." }, { role: "user", content: [{ type: "text", text: "Analyze this uploaded Braille page. Identify visible uncontracted or contracted Braille only when the image supports it. Report uncertainty in warnings. Count visible cells and lines." }, { type: "image_url", image_url: { url: input.dataUrl, detail: "high" } }] }], response_format: { type: "json_schema", json_schema: { name: "braille_analysis", strict: true, schema: analysisSchema } } }); const raw = extractText(response.choices[0]?.message?.content); return JSON.parse(raw) as { text: string; confidence: number; brailleStandard: string; warnings: string[]; cellCount: number; lineCount: number }; })(); const expectedWordCount = result.text.trim() ? result.text.trim().split(/\s+/).length : 0;
       await saveBrailleAnalysis({ passageId, ownerUserId: ctx.user.id, detectedText: result.text, confidence: result.confidence, brailleStandard: result.brailleStandard, warnings: JSON.stringify(result.warnings), cellCount: result.cellCount, lineCount: result.lineCount }); await updatePassageText(passageId, result.text, expectedWordCount); return { passageId, imageUrl: stored.url, ...result, expectedWordCount };
     }),
   }),
@@ -62,5 +71,4 @@ export const appRouter = router({
   }),
 });
 
-async function updatePassageText(id: number, detectedText: string, expectedWordCount: number) { const { getDb } = await import("./db"); const { passages } = await import("../drizzle/schema"); const { eq } = await import("drizzle-orm"); const db = await getDb(); if (db) await db.update(passages).set({ detectedText, expectedWordCount }).where(eq(passages.id, id)); }
 export type AppRouter = typeof appRouter;

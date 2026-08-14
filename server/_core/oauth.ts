@@ -4,6 +4,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -11,6 +12,24 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  app.get("/api/dev-login", async (req: Request, res: Response) => {
+    if (ENV.isProduction || !ENV.devAuthEnabled) {
+      res.status(404).json({ error: "Development login is disabled." });
+      return;
+    }
+    try {
+      const openId = ENV.devAuthOpenId;
+      await db.upsertUser({ openId, name: "Local Teacher", email: "teacher@localhost", loginMethod: "development", role: "admin", lastSignedIn: new Date() });
+      const sessionToken = await sdk.createSessionToken(openId, { name: "Local Teacher", expiresInMs: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
+      const returnTo = typeof req.query.returnTo === "string" && req.query.returnTo.startsWith("/") ? req.query.returnTo : "/";
+      res.redirect(302, returnTo);
+    } catch (error) {
+      console.error("[Dev Auth] Login failed", error);
+      res.status(500).json({ error: "Development login failed. Check DATABASE_URL and JWT_SECRET." });
+    }
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");

@@ -73,3 +73,12 @@
 - [x] Add root README and environment/run instructions for local development.
 - [x] Create the new `braillehelp` GitHub repository and push the assembled code.
 - [x] Verify the remote branch, repository tree, and runnable project commands.
+
+# End-to-End Repair — braillehelp
+
+- [x] Inspect braillehelp authentication configuration, API endpoints, database availability, and camera session flow.
+- [x] Fix login redirect/session handling and provide a clear authenticated local-development path.
+- [x] Ensure Braille upload/analysis API and passage persistence return usable session data.
+- [x] Ensure camera permission, visible video preview, 2D finger-motion telemetry, speed, reread, and skipped-region metrics work in a real browser session.
+- [x] Add focused regression and integration coverage for login guards, analysis, camera metrics, and API contracts.
+- [x] Run final build after all local-runtime changes; browser smoke verification is complete and checkpoint/push are the remaining delivery actions.

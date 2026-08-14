@@ -16,11 +16,25 @@ pnpm dev
 
 Open the local URL printed by the development server. Camera access requires HTTPS or localhost, and the browser will request camera and microphone consent when a reading session starts.
 
-The root app is the source of truth for the current product. It includes the live self-camera preview, a page-camera toggle, a real-time 2D motion overlay with movement trail and confidence, Braille image analysis, oral-reading comparison, session metrics, database persistence, and privacy/retention controls.
+For local authentication, copy `.env.example` to `.env`, set `JWT_SECRET`, and leave `DEV_AUTH_ENABLED=true`. When the managed OAuth variables are absent, the Sign in button uses the development-only `/api/dev-login` route and creates a local teacher session. This route is disabled automatically when `NODE_ENV=production`. When `VITE_OAUTH_PORTAL_URL` and `VITE_APP_ID` are configured, the same button uses the managed OAuth flow instead.
+
+The root app is the source of truth for the current product. It includes the live self-camera preview, a page-camera toggle, a real-time 2D motion overlay with movement trail and confidence, Braille image analysis, oral-reading comparison, session metrics, database persistence, and privacy/retention controls. Persisted analysis and reading sessions require `DATABASE_URL`.
+
+For standalone image analysis, start the included local service in another terminal:
+
+```bash
+cd legacy/local-ai
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+Then set `LOCAL_AI_URL=http://127.0.0.1:8000` in `.env`. The active server uploads the image to `/scan`, stores the returned analyzed text and confidence, and uses that passage as the expected text for camera and oral-reading metrics. The local model weights must be supplied separately under `legacy/local-ai/models`; otherwise use the managed Forge AI variables.
 
 ## Environment
 
-Do not commit `.env` files or secrets. In the managed environment, database, authentication, storage, and built-in AI variables are injected by the platform. For local development, copy the relevant example variables from the service documentation and provide a PostgreSQL-compatible `DATABASE_URL` plus the required authentication and AI/storage variables.
+Do not commit `.env` files or secrets. In the managed environment, database, authentication, storage, and built-in AI variables are injected by the platform. For local development, copy `.env.example` to `.env` and provide a MySQL-compatible `DATABASE_URL` plus the required authentication and AI/storage variables.
 
 After schema changes, generate and apply the Drizzle migration using the project’s database workflow. Do not run destructive database commands against production data without a reviewed migration.
 
