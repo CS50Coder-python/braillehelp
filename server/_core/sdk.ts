@@ -27,7 +27,6 @@ export type SessionPayload = {
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
-const DEVELOPMENT_SESSION_SECRET = "braillehelp-development-session-secret";
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
@@ -155,10 +154,7 @@ class SDKServer {
   }
 
   private getSessionSecret() {
-    const secret = ENV.cookieSecret || (!ENV.isProduction && ENV.devAuthEnabled ? DEVELOPMENT_SESSION_SECRET : "");
-    if (!secret) {
-      throw new Error("JWT_SECRET must be configured outside development login.");
-    }
+    const secret = ENV.cookieSecret;
     return new TextEncoder().encode(secret);
   }
 
@@ -214,13 +210,11 @@ class SDKServer {
         algorithms: ["HS256"],
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
-      const isDevelopmentSession = !ENV.isProduction && ENV.devAuthEnabled && openId === ENV.devAuthOpenId;
-      const normalizedAppId = typeof appId === "string" ? appId : "";
 
       if (
         !isNonEmptyString(openId) ||
-        !isNonEmptyString(name) ||
-        (!isNonEmptyString(normalizedAppId) && !isDevelopmentSession)
+        !isNonEmptyString(appId) ||
+        !isNonEmptyString(name)
       ) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
@@ -228,7 +222,7 @@ class SDKServer {
 
       return {
         openId,
-        appId: normalizedAppId,
+        appId,
         name,
       };
     } catch (error) {
@@ -293,7 +287,7 @@ class SDKServer {
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
-    if (!ENV.isProduction && ENV.devAuthEnabled && sessionUserId === ENV.devAuthOpenId && !ENV.databaseUrl) {
+    if (!ENV.isProduction && ENV.devAuthEnabled && sessionUserId === ENV.devAuthOpenId) {
       const now = new Date();
       return {
         id: 0,

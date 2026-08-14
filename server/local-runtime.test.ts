@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { addTrackingEvents, createPassage, createReadingSession, getPassage, getSessionWithEvents, updatePassageText } from "./db";
+import { addTrackingEvents, createPassage, createReadingSession, getPassage, getSessionWithEvents, getUserByOpenId, updatePassageText, upsertUser } from "./db";
 
 describe("local development runtime store", () => {
+  it("keeps development authentication usable without an external database", async () => {
+    const openId = `local-test-${Date.now()}`;
+    await upsertUser({ openId, name: "Local Teacher", email: "teacher@localhost", loginMethod: "development", role: "admin", lastSignedIn: new Date() });
+    const user = await getUserByOpenId(openId);
+    expect(user?.openId).toBe(openId);
+    expect(user?.role).toBe("admin");
+  });
+
   it("keeps an analyzed passage and camera session usable without an external database", async () => {
     const passageId = await createPassage({ ownerUserId: 0, title: "Local Braille page", sourceFileKey: "local://page", sourceMimeType: "image/png" } as any);
     await updatePassageText(passageId, "A student reads a page", 5);

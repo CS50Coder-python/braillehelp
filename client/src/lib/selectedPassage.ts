@@ -10,6 +10,10 @@ export function getReadingEntryView(hasSelectedPassage: boolean) {
   return hasSelectedPassage ? "read" : "analyze" as const;
 }
 
+export function getPostAnalysisView(passageId: number | undefined) {
+  return passageId && passageId > 0 ? "read" : "overview" as const;
+}
+
 export function writeSelectedPassageId(id: number | undefined, storage: Pick<Storage, "setItem" | "removeItem"> | undefined = typeof window === "undefined" ? undefined : window.localStorage) {
   if (!storage) return;
   if (id) storage.setItem(STORAGE_KEY, String(id));

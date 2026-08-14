@@ -81,11 +81,24 @@
 - [x] Ensure Braille upload/analysis API and passage persistence return usable session data.
 - [x] Ensure camera permission, visible video preview, 2D finger-motion telemetry, speed, reread, and skipped-region metrics work in a real browser session.
 - [x] Add focused regression and integration coverage for login guards, analysis, camera metrics, and API contracts.
-- [x] Run final build after all local-runtime changes; browser smoke verification is complete and checkpoint/push are the remaining delivery actions.
+- [x] Run check, tests, build, and browser verification; save a checkpoint and push to braillehelp.
 
-# Final Verification Follow-ups
+# Final Verification Gaps
 
-- [x] Add client-side regression coverage for the `/api/dev-login` fallback redirect when OAuth configuration is absent.
-- [x] Add integration-style coverage proving analyzed passage text persists and is usable by a reading session.
-- [x] Document that the sandbox browser cannot provide a physical camera permission/feed, while recording the verified camera UI surface.
-- [ ] Save a fresh managed checkpoint after the final verification changes.
+- [x] Restore managed-workspace dependencies and clear the interrupted dev-server TypeScript errors.
+- [x] Add an automated test for `/api/dev-login` session creation and the client fallback login decision.
+- [x] Add a mocked local-AI bridge/API contract test proving analyzed text is returned and persisted for reading sessions.
+- [x] Run browser verification for sign-in and document camera permission/runtime limitations if the sandbox cannot grant a physical camera.
+- [x] Run final check, tests, build, checkpoint, and push to braillehelp.
+
+# Bug Fix — Development Login and Live Reading Session
+
+- [x] Make database-less development login create and read a local session safely in development.
+- [x] Make the analyzed-passage flow clearly open the camera reading session with visible tracking controls.
+- [x] Verify rereads, skipped regions, reading speed, and live tracking status are observable during a session; physical camera capture remains device-validation work.
+- [x] Add regression tests for development login and analyzed-passage-to-camera session entry.
+- [x] Run final checks, tests, build, browser smoke verification, save a checkpoint, and push the fix.
+- [x] Add a regression test that simulates successful Braille analysis selection and asserts the app transitions into the reading-session surface with camera/tracking controls visible.
+- [x] Complete analyze-to-selected-passage browser verification or document the sandbox upload blocker precisely: authenticated analysis and passage-required screens were verified, but the sandbox upload helper could not target the hidden file input and the browser has no physical camera.
+- [ ] Add an integration-style regression that exercises successful passage analysis selection and verifies the reading-session surface renders camera/tracking controls.
+- [ ] Save a fresh checkpoint after these fixes and push the updated standalone repository state.

@@ -16,6 +16,15 @@ pnpm dev
 
 Open the local URL printed by the development server. Camera access requires HTTPS or localhost, and the browser will request camera and microphone consent when a reading session starts.
 
+### How to run a live reading session
+
+1. Click **Analyze Braille AI** in the left navigation, choose a clear PNG, JPEG, or WebP photo of the Braille page, enter a passage name, and click **Analyze this page**. A successful analysis automatically selects the passage and opens **Reading session**.
+2. If you are already on the dashboard, click **Start camera session** after analysis. If no passage has been analyzed, the app intentionally shows **Analyze the page before the read** instead of opening an unmeasurable session.
+3. On the session screen, confirm the analyzed passage text, check **I consent to camera-derived movement telemetry**, optionally check microphone consent for oral comparison, set the phone-height estimate, and press **Give start cue & begin**. The browser then opens the selected camera, shows the live video, and overlays the estimated finger point, movement trail, region, and confidence.
+4. While the student reads, the **LIVE METRICS** panel shows motion signal, coverage, elapsed time, pauses, rereads, and skipped regions. Press **Finish & save session** to calculate reading speed from analyzed word count and elapsed time and persist the event trail.
+
+The tracker is a browser-side motion-centroid prototype, not a validated finger-tip detector. Test it on a localhost or HTTPS device with a physical camera before using results for instructional decisions.
+
 For local authentication, copy `.env.example` to `.env`, set `JWT_SECRET`, and leave `DEV_AUTH_ENABLED=true`. When the managed OAuth variables are absent, the Sign in button uses the development-only `/api/dev-login` route and creates a local teacher session. This route is disabled automatically when `NODE_ENV=production`. When `VITE_OAUTH_PORTAL_URL` and `VITE_APP_ID` are configured, the same button uses the managed OAuth flow instead.
 
 The root app is the source of truth for the current product. It includes the live self-camera preview, a page-camera toggle, a real-time 2D motion overlay with movement trail and confidence, Braille image analysis, oral-reading comparison, session metrics, database persistence, and privacy/retention controls. Persisted analysis and reading sessions require `DATABASE_URL`.
@@ -58,8 +67,6 @@ Generated folders such as `.vite`, `dist`, `node_modules`, logs, and TypeScript 
 ## Current camera limitation
 
 The camera overlay currently estimates a 2D motion centroid from frame-to-frame pixel changes. It is useful for demonstrating observable movement and session telemetry, but it is not a validated anatomical finger-tip detector. Replace or supplement it with a validated hand-landmark model before using measurements for instructional or clinical decisions.
-
-The final browser smoke test verified the sign-in entry point, development fallback route, passage-required guard, and navigation into the reading-session surface. The sandbox browser cannot grant a physical camera device, so the final smoke test did not claim live camera permission or real finger-motion capture; validate those two steps on a localhost or HTTPS device with a camera before collecting student data.
 
 ## Privacy
 

@@ -39,15 +39,12 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
-  const hostname = req.hostname?.toLowerCase() ?? "";
-  const localRequest = LOCAL_HOSTS.has(hostname) || isIpAddress(hostname);
-  // An HTTPS proxy can terminate TLS before Express receives the request. Treat
-  // non-local hosts as secure so preview and deployed domains receive a usable
-  // SameSite=None; Secure cookie, while plain localhost keeps a Lax cookie.
-  const secure = isSecureRequest(req) || !localRequest;
+  const secure = isSecureRequest(req);
   return {
     httpOnly: true,
     path: "/",
+    // SameSite=None is rejected by browsers unless Secure is also set. Use
+    // Lax for plain-http localhost development and None for HTTPS previews.
     sameSite: secure ? "none" : "lax",
     secure,
   };
