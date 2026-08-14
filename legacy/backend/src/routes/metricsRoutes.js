@@ -1,11 +1,20 @@
 import express from 'express';
 
 const REQUEST_TIMEOUT_MS = 5000;
-const METRIC_FIELDS = ['reading_speed', 'mistakes', 'rereads'];
+const INTEGER_METRIC_FIELDS = ['reading_speed', 'mistakes', 'rereads', 'word_count'];
+const RATIO_FIELD = 'mistake_ratio';
 
 function isNonnegativeInteger(value) {
   return typeof value === 'number' && Number.isFinite(value) &&
     Number.isInteger(value) && value >= 0;
+}
+
+function isNonnegativeNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+function isValidDuration(value) {
+  return typeof value === 'string' && /^\d{1,2}:[0-5]\d$/.test(value);
 }
 
 export function createMetricsRouter({ metricsFetch = globalThis.fetch } = {}) {
@@ -16,11 +25,13 @@ export function createMetricsRouter({ metricsFetch = globalThis.fetch } = {}) {
     if (
       !payload ||
       typeof payload !== 'object' ||
-      !METRIC_FIELDS.every((field) => isNonnegativeInteger(payload[field]))
+      !INTEGER_METRIC_FIELDS.every((field) => isNonnegativeInteger(payload[field])) ||
+      !isNonnegativeNumber(payload[RATIO_FIELD]) ||
+      !isValidDuration(payload.duration)
     ) {
       return response.status(400).json({
         success: false,
-        error: 'reading_speed, mistakes, and rereads must be nonnegative integers.'
+        error: 'reading_speed, mistakes, rereads, and word_count must be nonnegative integers; mistake_ratio must be nonnegative; duration must use MM:SS.'
       });
     }
 
@@ -30,15 +41,20 @@ export function createMetricsRouter({ metricsFetch = globalThis.fetch } = {}) {
       headers['X-Api-Key'] = process.env.REST_API_WRITE_KEY;
     }
 
+    const upstreamPayload = {
+      reading_speed: payload.reading_speed,
+      mistakes: payload.mistakes,
+      rereads: payload.rereads,
+      word_count: payload.word_count,
+      mistake_ratio: payload.mistake_ratio,
+      duration: payload.duration
+    };
+
     try {
       const upstream = await metricsFetch(`${restApiUrl.replace(/\/$/, '')}/update`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          reading_speed: payload.reading_speed,
-          mistakes: payload.mistakes,
-          rereads: payload.rereads
-        }),
+        body: JSON.stringify(upstreamPayload),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       });
 

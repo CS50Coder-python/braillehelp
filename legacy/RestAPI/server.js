@@ -22,7 +22,11 @@ if (!WRITE_API_KEY) {
     console.warn('[WARN] API_WRITE_KEY is not set — POST /update is unauthenticated.');
 }
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+const DEFAULT_ALLOWED_ORIGIN = process.env.NODE_ENV === 'production' ? null : '*';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || DEFAULT_ALLOWED_ORIGIN;
+if (!ALLOWED_ORIGIN) {
+    console.warn('[WARN] ALLOWED_ORIGIN is not set — browser CORS is disabled in production.');
+}
 
 const DEFAULT_DAILY_QUESTION = {
     id: 'question-1',
@@ -104,6 +108,33 @@ const sendJson = (res, statusCode, data) => {
     res.end(JSON.stringify(data));
 };
 
+function applyCors(req, res) {
+    const requestOrigin = req.headers.origin;
+    const isAllowed = ALLOWED_ORIGIN === '*' || (typeof requestOrigin === 'string' && requestOrigin === ALLOWED_ORIGIN);
+    if (isAllowed) {
+        res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN === '*' ? '*' : requestOrigin);
+        res.setHeader('Vary', 'Origin');
+    }
+    return isAllowed;
+}
+
+function authorizeWrite(req, res) {
+    if (!WRITE_API_KEY) {
+        if (process.env.NODE_ENV === 'production') {
+            sendJson(res, 503, { error: 'Write API key is not configured' });
+            return false;
+        }
+        return true;
+    }
+
+    if (req.headers['x-api-key'] !== WRITE_API_KEY) {
+        sendJson(res, 401, { error: 'Unauthorized' });
+        return false;
+    }
+
+    return true;
+}
+
 const broadcastData = (data) => {
     const payload = `data: ${JSON.stringify(data)}\n\n`;
     for (const client of sseClients) {
@@ -173,6 +204,8 @@ const routes = {
     },
 
     'POST /daily-question': async (req, res) => {
+        if (!authorizeWrite(req, res)) return;
+
         let rawBody;
 
         try {
@@ -198,9 +231,7 @@ const routes = {
     },
 
     'POST /update': async (req, res) => {
-        if (WRITE_API_KEY && req.headers['x-api-key'] !== WRITE_API_KEY) {
-            return sendJson(res, 401, { error: 'Unauthorized' });
-        }
+        if (!authorizeWrite(req, res)) return;
 
         const ip = getClientIp(req);
         if (isRateLimited(ip)) {
@@ -225,8 +256,8 @@ const routes = {
             return sendJson(res, 400, { error: 'Invalid JSON payload' });
         }
 
-        const numericFieldsValid = [body.reading_speed, body.mistakes, body.rereads, body.mistake_ratio].every(isValidNumber);
-        const wordCountValid = isValidNumber(body.word_count) && Number.isInteger(body.word_count);
+        const numericFieldsValid = [body.reading_speed, body.mistakes, body.rereads, body.mistake_ratio].every((value) => isValidNumber(value) && value >= 0);
+        const wordCountValid = isValidNumber(body.word_count) && Number.isInteger(body.word_count) && body.word_count >= 0;
 
         if (!numericFieldsValid || !wordCountValid || !isValidInterval(body.duration)) {
             console.error('Rejected payload — raw body:', rawBody);
@@ -264,7 +295,6 @@ const routes = {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
             'X-Accel-Buffering': 'no'
         });
 
@@ -281,15 +311,18 @@ const routes = {
 function isValidInterval(str) {
     if (typeof str !== 'string') return false;
     const verboseRegex = /^(\d+\s*(minutes?|mins?))?\s*(\d+\s*(seconds?|secs?))?$/i;
-    const colonRegex = /^\d{1,2}:\d{2}$/;
+    const colonRegex = /^\d{1,2}:[0-5]\d$/;
     return (verboseRegex.test(str.trim()) || colonRegex.test(str.trim())) && str.trim() !== "";
 }
 
 const server = http.createServer(async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    const corsAllowed = applyCors(req, res);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Api-Key');
     if (req.method === 'OPTIONS') {
+        if (req.headers.origin && !corsAllowed) {
+            return sendJson(res, 403, { error: 'Origin is not allowed' });
+        }
         res.writeHead(204);
         res.end();
         return;

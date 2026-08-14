@@ -9,6 +9,16 @@ const originalLocalBrailleServiceUrl = process.env.LOCAL_BRAILLE_SERVICE_URL;
 const originalRestApiUrl = process.env.REST_API_URL;
 const originalRestApiWriteKey = process.env.REST_API_WRITE_KEY;
 
+const validMetrics = (overrides = {}) => ({
+  reading_speed: 24,
+  mistakes: 2,
+  rereads: 3,
+  word_count: 120,
+  mistake_ratio: 60,
+  duration: '02:30',
+  ...overrides
+});
+
 afterEach(() => {
   if (originalApiKey === undefined) {
     delete process.env.OPENAI_API_KEY;
@@ -35,35 +45,38 @@ describe('Metrics proxy', () => {
 
     const response = await request(createApp({ metricsFetch }))
       .post('/api/metrics')
-      .send({ reading_speed: 24, mistakes: 2, rereads: 3 });
+      .send(validMetrics());
 
     assert.equal(response.status, 200);
     assert.equal(forwarded.url, 'http://localhost:8080/update');
     assert.deepEqual(JSON.parse(forwarded.options.body), {
       reading_speed: 24,
       mistakes: 2,
-      rereads: 3
+      rereads: 3,
+      word_count: 120,
+      mistake_ratio: 60,
+      duration: '02:30'
     });
   });
 
   it('rejects negative values', async () => {
     const response = await request(createApp())
       .post('/api/metrics')
-      .send({ reading_speed: -1, mistakes: 0, rereads: 0 });
+      .send(validMetrics({ reading_speed: -1, mistakes: 0, rereads: 0 }));
     assert.equal(response.status, 400);
   });
 
   it('rejects decimal values', async () => {
     const response = await request(createApp())
       .post('/api/metrics')
-      .send({ reading_speed: 1.5, mistakes: 0, rereads: 0 });
+      .send(validMetrics({ reading_speed: 1.5, mistakes: 0, rereads: 0 }));
     assert.equal(response.status, 400);
   });
 
   it('rejects missing values', async () => {
     const response = await request(createApp())
       .post('/api/metrics')
-      .send({ reading_speed: 1, mistakes: 0 });
+      .send({ reading_speed: 1, mistakes: 0, rereads: 0 });
     assert.equal(response.status, 400);
   });
 
@@ -73,7 +86,7 @@ describe('Metrics proxy', () => {
     };
     const response = await request(createApp({ metricsFetch }))
       .post('/api/metrics')
-      .send({ reading_speed: 1, mistakes: 0, rereads: 0 });
+      .send(validMetrics({ reading_speed: 1, mistakes: 0, rereads: 0 }));
     assert.equal(response.status, 503);
     assert.equal(response.body.error, 'The metrics service is unavailable.');
   });
@@ -88,7 +101,7 @@ describe('Metrics proxy', () => {
 
     const response = await request(createApp({ metricsFetch }))
       .post('/api/metrics')
-      .send({ reading_speed: 1, mistakes: 0, rereads: 0 });
+      .send(validMetrics({ reading_speed: 1, mistakes: 0, rereads: 0 }));
 
     assert.equal(response.status, 200);
     assert.equal(upstreamHeaders['X-Api-Key'], 'server-only-test-key');

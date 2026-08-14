@@ -83,7 +83,7 @@ const apiEvents = [
 ];
 
 const teacherSignals = [
-  'Session speed compared with age-based norms',
+  'Session speed compared with a teacher-reviewed reference',
   'Repeated backtracking and line loss',
   'Long pauses near unfamiliar Braille patterns',
   'A review queue for targeted instruction'
@@ -341,20 +341,6 @@ export default function App() {
       window.clearInterval(refreshTimer);
     };
   }, []);
-
-  useEffect(() => {
-    if (sessionState !== 'capturing') {
-      return;
-    }
-
-    const processingTimer = window.setTimeout(() => setSessionState('processing'), 1700);
-    const readyTimer = window.setTimeout(() => setSessionState('ready'), 3600);
-
-    return () => {
-      window.clearTimeout(processingTimer);
-      window.clearTimeout(readyTimer);
-    };
-  }, [sessionState]);
 
   const metrics = [
     {
@@ -822,7 +808,7 @@ export default function App() {
                 <small>
                   {sessionState === 'ready'
                     ? 'Summary available for teacher review'
-                    : 'Within expected range for age band'}
+                    : 'Set a teacher-reviewed reference before classifying speed'}
                 </small>
               </div>
             </div>

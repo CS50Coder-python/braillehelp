@@ -214,7 +214,7 @@ export function useReadingTracker(
     setUploadMessage('Uploading session metrics…');
 
     try {
-      await uploadReadingMetrics(result);
+      await uploadReadingMetrics(result, passageWordCount);
       setUploadStatus('success');
       setUploadMessage('Session metrics uploaded successfully.');
     } catch (error) {
