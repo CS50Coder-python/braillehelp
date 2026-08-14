@@ -11,6 +11,6 @@ describe("development authentication", () => {
     expect(handler).toBeDefined();
     await handler!({ query: { returnTo: "/read" }, protocol: "http", headers: {} }, { cookie, redirect, status: vi.fn().mockReturnThis(), json: vi.fn() });
     expect(cookie).toHaveBeenCalledWith(expect.any(String), expect.any(String), expect.objectContaining({ httpOnly: true }));
-    expect(redirect).toHaveBeenCalledWith(302, "/read");
+    expect(redirect).toHaveBeenCalledWith(302, expect.stringMatching(/^\/read#dev-session=.+$/));
   });
 });

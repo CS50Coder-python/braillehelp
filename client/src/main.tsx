@@ -10,6 +10,20 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
+function restoreDevelopmentSessionFromFragment() {
+  if (typeof window === "undefined" || !window.location.hash) return;
+  const sessionToken = new URLSearchParams(window.location.hash.slice(1)).get("dev-session");
+  if (!sessionToken) return;
+  try {
+    sessionStorage.setItem("manus-cookie", `${COOKIE_NAME}=${sessionToken}`);
+  } catch {
+    // The cookie remains the primary session path when sessionStorage is unavailable.
+  }
+  window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+}
+
+restoreDevelopmentSessionFromFragment();
+
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;

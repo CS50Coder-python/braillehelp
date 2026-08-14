@@ -27,6 +27,7 @@ export type SessionPayload = {
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
+const DEVELOPMENT_SESSION_SECRET = "braillehelp-development-session-secret";
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
@@ -154,7 +155,10 @@ class SDKServer {
   }
 
   private getSessionSecret() {
-    const secret = ENV.cookieSecret;
+    const secret = ENV.cookieSecret || (!ENV.isProduction && ENV.devAuthEnabled ? DEVELOPMENT_SESSION_SECRET : "");
+    if (!secret) {
+      throw new Error("JWT_SECRET must be configured outside development login.");
+    }
     return new TextEncoder().encode(secret);
   }
 
@@ -210,11 +214,13 @@ class SDKServer {
         algorithms: ["HS256"],
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
+      const isDevelopmentSession = !ENV.isProduction && ENV.devAuthEnabled && openId === ENV.devAuthOpenId;
+      const normalizedAppId = typeof appId === "string" ? appId : "";
 
       if (
         !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
+        !isNonEmptyString(name) ||
+        (!isNonEmptyString(normalizedAppId) && !isDevelopmentSession)
       ) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
@@ -222,7 +228,7 @@ class SDKServer {
 
       return {
         openId,
-        appId,
+        appId: normalizedAppId,
         name,
       };
     } catch (error) {

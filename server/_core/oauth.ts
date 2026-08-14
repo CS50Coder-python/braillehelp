@@ -23,7 +23,11 @@ export function registerOAuthRoutes(app: Express) {
       const sessionToken = await sdk.createSessionToken(openId, { name: "Local Teacher", expiresInMs: ONE_YEAR_MS });
       res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
       const returnTo = typeof req.query.returnTo === "string" && req.query.returnTo.startsWith("/") ? req.query.returnTo : "/";
-      res.redirect(302, returnTo);
+      // Preview iframes and some embedded browsers can block cookies. This
+      // development-only token is placed in the URL fragment (never sent to
+      // the server) and is copied to sessionStorage by the client bootstrap.
+      const separator = returnTo.includes("#") ? "&" : "#";
+      res.redirect(302, `${returnTo}${separator}dev-session=${encodeURIComponent(sessionToken)}`);
     } catch (error) {
       console.error("[Dev Auth] Login failed", error);
       res.status(500).json({ error: "Development login failed. Check DATABASE_URL and JWT_SECRET." });
