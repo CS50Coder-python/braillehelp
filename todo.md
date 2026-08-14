@@ -129,7 +129,7 @@
 - [x] Inspect environment loading, `.env.example`, and provider detection for standalone local development.
 - [x] Make local development configuration runnable for Braille analysis and OAuth without weakening production requirements.
 - [x] Add regression coverage for AI-provider detection and missing OAuth configuration behavior.
-- [ ] Run checks, tests, build, verify local startup, save a checkpoint, and push the configuration repair to GitHub.
+- [x] Run checks, tests, build, verify local startup, save a checkpoint, and push the configuration repair to GitHub; braillehelp main is at e973db3.
 - [x] Document that `.env.example` is absent and add explicit standalone environment setup guidance with provider selection.
 - [x] Verify the no-provider development startup and dev-login path with dotenv loading; this checkout does not include a runnable legacy local AI service, so actual analysis requires Forge credentials or a separately started local service.
 - [x] Verify development login end to end in the no-OAuth configuration before the final checkpoint: `/api/dev-login` issued a valid local session cookie on port 3116.
@@ -137,3 +137,14 @@
 - [x] Verify a protected endpoint succeeds with the no-OAuth development-login cookie: `/api/trpc/auth.me` returned HTTP 200 after `/api/dev-login` issued the cookie.
 - [x] Add a regression for the actual SDK missing-OAUTH warning severity in development versus production/OAuth-only mode.
 - [x] Verify the no-OAuth development cookie against the protected `reading.create` procedure and assert a successful authenticated response body through the real request context.
+- [x] Save a fresh managed checkpoint for the missing AI/OAuth runtime-configuration repair and record its version: 1d85c2f4.
+
+# Bug Fix — Local AI Fallback and Clean Finger Tracking
+
+- [x] Fall back from an unavailable LOCAL_AI_URL to Forge vision analysis when Forge is configured.
+- [x] Keep the camera reading session clean and expose visible finger position, confidence, trail, speed, rereads, skipped regions, and coverage metrics.
+- [x] Add regression coverage for provider fallback and camera-session metric visibility.
+- [ ] Run checks, tests, build, browser verification, save a checkpoint, and push the repair to braillehelp main.
+- [x] Add or strengthen a runtime camera-session regression that directly verifies finger position, confidence, trail, speed, rereads, skipped regions, and coverage labels.
+- [x] Add a runtime camera-session assertion for the visible reading-speed label/value.
+- [x] Expose and test an explicit finger-position label/value, or revise the tracked requirement to the verified region/confidence/trail contract.

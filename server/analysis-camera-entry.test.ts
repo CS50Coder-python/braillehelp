@@ -1,7 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { handleAnalyzedPassageSelection } from "../client/src/pages/Home";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+const { mockTrpc } = vi.hoisted(() => {
+  const mockMutation = () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false });
+  return { mockTrpc: {
+    reading: {
+      passage: { useQuery: () => ({ data: { id: 42, title: "Test passage", detectedText: "A tactile reading passage", expectedWordCount: 4, studentId: null } }) },
+      create: { useMutation: mockMutation },
+      calibrate: { useMutation: mockMutation },
+      start: { useMutation: mockMutation },
+      appendEvents: { useMutation: mockMutation },
+      complete: { useMutation: mockMutation },
+      transcribe: { useMutation: mockMutation },
+    },
+    classroom: { students: { useQuery: () => ({ data: [] }) } },
+  } };
+});
+vi.mock("../client/src/lib/trpc", () => ({ trpc: mockTrpc }));
+vi.mock("../client/src/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: null }) }));
+vi.mock("sonner", () => ({ toast: vi.fn() }));
+
+import { handleAnalyzedPassageSelection, ReadingSession } from "../client/src/pages/Home";
+import { CameraTrackingOverlay } from "../client/src/components/CameraTrackingOverlay";
 
 describe("analyzed passage camera entry", () => {
   it("persists successful analysis selection and enters the reading surface", () => {
@@ -14,12 +35,22 @@ describe("analyzed passage camera entry", () => {
     expect(nextView).toBe("read");
   });
 
-  it("keeps the live camera and metric controls in the production session surface", () => {
-    const source = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
-    expect(source).toContain("Live camera preview");
-    expect(source).toContain("Give start cue & begin");
-    expect(source).toContain("Rereads");
-    expect(source).toContain("Skipped regions");
-    expect(source).toContain("Reading speed");
+  it("renders the actual session camera and live metric controls after passage selection", () => {
+    const html = renderToStaticMarkup(createElement(ReadingSession, { passageId: 42, onExit: () => {}, onAnalyze: () => {} }));
+    expect(html).toContain("Live camera preview");
+    expect(html).toContain("I consent to camera-derived movement telemetry");
+    expect(html).toContain("Give start cue &amp; begin");
+    expect(html).toContain("Motion signal");
+    expect(html).toContain("Coverage");
+    expect(html).toContain("Elapsed");
+    expect(html).toContain("Pauses");
+    expect(html).toContain("Rereads");
+    expect(html).toContain("Skipped regions");
+    expect(html).toContain("A tactile reading passage");
+
+    const overlay = renderToStaticMarkup(createElement(CameraTrackingOverlay, { point: { x: 0.42, y: 0.61, region: 3, confidence: 0.87 }, trail: [{ x: 0.2, y: 0.5, region: 1, confidence: 0.8 }], active: true }));
+    expect(overlay).toContain("Finger position 42% × 61% · region 4 · 87%");
+    expect(overlay).toContain("Finger tracking live");
+    expect(overlay).toContain("tracking-trail-dot");
   });
 });

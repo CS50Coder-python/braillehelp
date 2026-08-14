@@ -17,11 +17,35 @@ import { ENV } from "./_core/env";
 describe("Braille analysis failure handling", () => {
   it("returns an actionable error when the configured local AI service is unreachable", async () => {
     const previousLocalAiUrl = ENV.localAiUrl;
+    const previousForgeUrl = ENV.forgeApiUrl;
+    const previousForgeKey = ENV.forgeApiKey;
     ENV.localAiUrl = "http://127.0.0.1:9";
+    ENV.forgeApiUrl = "";
+    ENV.forgeApiKey = "";
     storagePutMock.mockResolvedValueOnce({ key: "local://page.png", url: "" });
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
     await expect(appRouter.createCaller({ user: { id: 0, role: "admin" } as any, req: {} as any, res: {} as any }).braille.analyzeImage({ title: "AI failure test", fileName: "page.png", mimeType: "image/png", dataUrl: "data:image/png;base64,aGVsbG8=" })).rejects.toThrow("The local Braille AI service could not be reached");
     ENV.localAiUrl = previousLocalAiUrl;
+    ENV.forgeApiUrl = previousForgeUrl;
+    ENV.forgeApiKey = previousForgeKey;
+    vi.unstubAllGlobals();
+  });
+
+  it("falls back to Forge vision when local AI is unreachable", async () => {
+    const previousLocalAiUrl = ENV.localAiUrl;
+    const previousForgeUrl = ENV.forgeApiUrl;
+    const previousForgeKey = ENV.forgeApiKey;
+    ENV.localAiUrl = "http://127.0.0.1:9";
+    ENV.forgeApiUrl = "https://forge.example";
+    ENV.forgeApiKey = "test-key";
+    storagePutMock.mockResolvedValueOnce({ key: "local://fallback.png", url: "" });
+    invokeLLMMock.mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify({ text: "fallback works", confidence: 0.88, brailleStandard: "UEB_UNCONTRACTED", warnings: [], cellCount: 7, lineCount: 1 }) } }] });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+    const result = await appRouter.createCaller({ user: { id: 0, role: "admin" } as any, req: {} as any, res: {} as any }).braille.analyzeImage({ title: "Fallback test", fileName: "fallback.png", mimeType: "image/png", dataUrl: "data:image/png;base64,aGVsbG8=" });
+    expect(result.text).toBe("fallback works");
+    ENV.localAiUrl = previousLocalAiUrl;
+    ENV.forgeApiUrl = previousForgeUrl;
+    ENV.forgeApiKey = previousForgeKey;
     vi.unstubAllGlobals();
   });
 

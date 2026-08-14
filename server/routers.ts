@@ -33,6 +33,13 @@ async function analyzeWithLocalAi(data: Buffer, mimeType: string) {
   }
 }
 
+async function analyzeWithForge(dataUrl: string) {
+  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Braille analysis is not configured. Start a local Braille AI service on port 8000 or configure the managed Forge AI variables." });
+  const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "You are a cautious Braille image analysis service. Read only clearly visible Braille cells. Do not invent missing cells. This is an assistive prototype, not a clinical or educational assessment. Return the requested JSON only." }, { role: "user", content: [{ type: "text", text: "Analyze this uploaded Braille page. Identify visible uncontracted or contracted Braille only when the image supports it. Report uncertainty in warnings. Count visible cells and lines." }, { type: "image_url", image_url: { url: dataUrl, detail: "high" } }] }], response_format: { type: "json_schema", json_schema: { name: "braille_analysis", strict: true, schema: analysisSchema } } });
+  const raw = extractText(response.choices[0]?.message?.content);
+  return JSON.parse(raw) as { text: string; confidence: number; brailleStandard: string; warnings: string[]; cellCount: number; lineCount: number };
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -68,7 +75,19 @@ export const appRouter = router({
         stored = { key: `local://${fileKey}`, url: "" };
       }
       const passageId = await createPassage({ ownerUserId: ctx.user.id, studentId: input.studentId ?? null, title: input.title, sourceFileKey: stored.key, sourceMimeType: input.mimeType });
-      const result = ENV.localAiUrl ? await analyzeWithLocalAi(buffer, input.mimeType) : await (async () => { if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Braille analysis is not configured. Set LOCAL_AI_URL for the local service or the managed Forge AI variables." }); const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "You are a cautious Braille image analysis service. Read only clearly visible Braille cells. Do not invent missing cells. This is an assistive prototype, not a clinical or educational assessment. Return the requested JSON only." }, { role: "user", content: [{ type: "text", text: "Analyze this uploaded Braille page. Identify visible uncontracted or contracted Braille only when the image supports it. Report uncertainty in warnings. Count visible cells and lines." }, { type: "image_url", image_url: { url: input.dataUrl, detail: "high" } }] }], response_format: { type: "json_schema", json_schema: { name: "braille_analysis", strict: true, schema: analysisSchema } } }); const raw = extractText(response.choices[0]?.message?.content); return JSON.parse(raw) as { text: string; confidence: number; brailleStandard: string; warnings: string[]; cellCount: number; lineCount: number }; })(); const expectedWordCount = result.text.trim() ? result.text.trim().split(/\s+/).length : 0;
+      let result;
+      if (ENV.localAiUrl) {
+        try {
+          result = await analyzeWithLocalAi(buffer, input.mimeType);
+        } catch (error) {
+          if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw error;
+          console.warn("[Braille Analysis] Local AI unavailable; falling back to Forge vision analysis");
+          result = await analyzeWithForge(input.dataUrl);
+        }
+      } else {
+        result = await analyzeWithForge(input.dataUrl);
+      }
+      const expectedWordCount = result.text.trim() ? result.text.trim().split(/\s+/).length : 0;
       await saveBrailleAnalysis({ passageId, ownerUserId: ctx.user.id, detectedText: result.text, confidence: result.confidence, brailleStandard: result.brailleStandard, warnings: JSON.stringify(result.warnings), cellCount: result.cellCount, lineCount: result.lineCount }); await updatePassageText(passageId, result.text, expectedWordCount); return { passageId, imageUrl: stored.url, ...result, expectedWordCount };
     }),
   }),
