@@ -39,12 +39,17 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
-  const secure = isSecureRequest(req);
+  const hostname = req.hostname?.toLowerCase() ?? "";
+  const localRequest = LOCAL_HOSTS.has(hostname) || isIpAddress(hostname);
+  // A hosted HTTPS platform can terminate TLS before Express receives the
+  // request. Non-local hosts therefore need a Secure cookie even if the
+  // forwarded protocol header is unavailable.
+  const secure = isSecureRequest(req) || !localRequest;
   return {
     httpOnly: true,
     path: "/",
     // SameSite=None is rejected by browsers unless Secure is also set. Use
-    // Lax for plain-http localhost development and None for HTTPS previews.
+    // Lax only for plain-http localhost development.
     sameSite: secure ? "none" : "lax",
     secure,
   };

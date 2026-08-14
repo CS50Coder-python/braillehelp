@@ -50,6 +50,12 @@ describe("Braille analysis failure handling", () => {
   });
 
   it("continues development analysis when optional image storage is unreachable", async () => {
+    const previousLocalAiUrl = ENV.localAiUrl;
+    const previousForgeUrl = ENV.forgeApiUrl;
+    const previousForgeKey = ENV.forgeApiKey;
+    ENV.localAiUrl = "";
+    ENV.forgeApiUrl = "https://forge.example";
+    ENV.forgeApiKey = "test-key";
     storagePutMock.mockRejectedValueOnce(new TypeError("fetch failed"));
     invokeLLMMock.mockResolvedValueOnce({
       choices: [{ message: { content: JSON.stringify({ text: "hello", confidence: 0.92, brailleStandard: "UEB_UNCONTRACTED", warnings: [], cellCount: 5, lineCount: 1 }) } }],
@@ -69,5 +75,8 @@ describe("Braille analysis failure handling", () => {
     expect(result.passageId).toBeGreaterThan(0);
     expect(result.text).toBe("hello");
     expect(result.expectedWordCount).toBe(1);
+    ENV.localAiUrl = previousLocalAiUrl;
+    ENV.forgeApiUrl = previousForgeUrl;
+    ENV.forgeApiKey = previousForgeKey;
   });
 });

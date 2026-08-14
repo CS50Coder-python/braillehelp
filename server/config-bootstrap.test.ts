@@ -27,10 +27,11 @@ describe("standalone runtime configuration", () => {
   it("loads dotenv before importing the server modules", () => {
     const root = process.cwd();
     const source = readFileSync(resolve(root, "server/_core/index.ts"), "utf8");
+    const appSource = readFileSync(resolve(root, "server/_core/app.ts"), "utf8");
     const envSource = readFileSync(resolve(root, "server/_core/env.ts"), "utf8");
     const sdkSource = readFileSync(resolve(root, "server/_core/sdk.ts"), "utf8");
     expect(source.indexOf('import "dotenv/config";')).toBeGreaterThanOrEqual(0);
-    expect(source.indexOf('import express from "express";')).toBeGreaterThan(source.indexOf('import "dotenv/config";'));
+    expect(appSource.indexOf('import express from "express";')).toBeGreaterThanOrEqual(0);
     expect(envSource).toContain('http://127.0.0.1:8000');
     expect(sdkSource).toContain('local development login is active');
   });

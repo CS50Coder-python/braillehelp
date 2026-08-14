@@ -18,12 +18,12 @@ function extractText(content: unknown) { if (typeof content === "string") return
 function normalizeText(value: string) { return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim(); }
 export function compareTexts(expected: string, transcript: string) { const expectedWords = normalizeText(expected).split(" ").filter(Boolean); const spokenWords = normalizeText(transcript).split(" ").filter(Boolean); const mismatches: string[] = []; const total = Math.max(expectedWords.length, spokenWords.length); for (let index = 0; index < total; index += 1) if (expectedWords[index] !== spokenWords[index]) mismatches.push(`word ${index + 1}: expected “${expectedWords[index] ?? "<missing>"}”, heard “${spokenWords[index] ?? "<missing>"}”`); return { matchScore: total ? Math.max(0, Math.round(((total - mismatches.length) / total) * 100)) : 0, mismatches }; }
 async function requireOwnedSession(sessionId: number, ownerUserId: number) { const detail = await getSessionWithEvents(sessionId, ownerUserId); if (!detail?.session) throw new TRPCError({ code: "NOT_FOUND", message: "Reading session not found." }); return detail; }
-async function analyzeWithLocalAi(data: Buffer, mimeType: string) {
-  if (!ENV.localAiUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set LOCAL_AI_URL or the managed Forge AI variables before analyzing Braille images." });
+export async function analyzeWithLocalAi(data: Buffer, mimeType: string, baseUrl = ENV.localAiUrl) {
+  if (!baseUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set LOCAL_AI_URL or the managed Forge AI variables before analyzing Braille images." });
   try {
     const form = new FormData();
     form.append("image", new Blob([new Uint8Array(data)], { type: mimeType }), "braille-page");
-    const response = await fetch(`${ENV.localAiUrl.replace(/\/$/, "")}/scan`, { method: "POST", body: form });
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/scan`, { method: "POST", body: form });
     if (!response.ok) throw new TRPCError({ code: "BAD_GATEWAY", message: `Local Braille AI returned HTTP ${response.status}. Start the service from legacy/local-ai before uploading.` });
     const payload = await response.json() as { text?: string; confidence?: number; brailleStandard?: string; warnings?: string[]; lines?: unknown[]; cellCount?: number; lineCount?: number };
     return { text: payload.text ?? "", confidence: payload.confidence ?? 0, brailleStandard: payload.brailleStandard ?? "UEB_UNCONTRACTED", warnings: payload.warnings ?? [], cellCount: payload.cellCount ?? 0, lineCount: payload.lineCount ?? payload.lines?.length ?? 0 };
