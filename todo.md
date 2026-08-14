@@ -110,6 +110,16 @@
 - [x] Add regression coverage for camera-session authentication and incomplete-payload handling.
 - [x] Run checks, tests, build, browser verification, save a checkpoint, and push the fix to GitHub.
 - [x] Add a protected reading-session request regression using a local development session token, including a legacy malformed-token request-context path.
-- [ ] Save a fresh checkpoint for the incomplete-session-payload repair and record its version.
-- [ ] Push the latest session-payload repair to braillehelp main and verify the remote HEAD.
-- [ ] Run a browser smoke test that opens Reading session with the repaired auth state, or document the physical-camera sandbox blocker precisely.
+- [x] Save a fresh checkpoint for the incomplete-session-payload repair and record its version: ea044ca4.
+- [x] Push the latest session-payload repair to braillehelp main and verify the remote HEAD: 580408a.
+- [x] Run a browser smoke test that opens Reading session with the repaired auth state, or document the physical-camera sandbox blocker precisely: Reading session opened and showed the passage-required guard; physical camera and hidden-file upload remain unavailable in this sandbox.
+
+# Bug Fix — Braille Analysis Failed to Fetch
+
+- [x] Trace the upload form, tRPC request, and server AI/storage configuration for the failed analysis request.
+- [x] Repair the analysis request or provide a clear local fallback so valid Braille uploads do not surface only a generic fetch error.
+- [x] Add regression coverage for analysis success and failure handling.
+- [x] Run checks, tests, build, browser verification, save a checkpoint, and push the fix to GitHub.
+- [x] Add a regression for an unreachable local AI or Forge analysis provider and assert an actionable error instead of generic fetch failure.
+- [x] Run or document the browser Analyze Braille smoke-test boundary for the sandbox: the authenticated Analyze Braille surface was verified, but the sandbox upload helper could not target its hidden file input, so a real image analysis request could not be submitted here.
+- [ ] Save a fresh analysis-repair checkpoint and push the verified changes to braillehelp main.

@@ -39,7 +39,7 @@ pip install -r requirements.txt
 uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Then set `LOCAL_AI_URL=http://127.0.0.1:8000` in `.env`. The active server uploads the image to `/scan`, stores the returned analyzed text and confidence, and uses that passage as the expected text for camera and oral-reading metrics. The local model weights must be supplied separately under `legacy/local-ai/models`; otherwise use the managed Forge AI variables.
+Then set `LOCAL_AI_URL=http://127.0.0.1:8000` in `.env`. The active server uploads the image to `/scan`, stores the returned analyzed text and confidence, and uses that passage as the expected text for camera and oral-reading metrics. The local model weights must be supplied separately under `legacy/local-ai/models`; otherwise remove `LOCAL_AI_URL` and use the managed Forge AI variables. If the local service is unreachable, the app now reports an actionable provider message instead of a generic browser fetch error; in development, an optional Forge storage-upload failure no longer blocks the AI analysis request.
 
 ## Environment
 
