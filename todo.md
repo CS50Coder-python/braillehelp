@@ -100,5 +100,16 @@
 - [x] Run final checks, tests, build, browser smoke verification, save a checkpoint, and push the fix.
 - [x] Add a regression test that simulates successful Braille analysis selection and asserts the app transitions into the reading-session surface with camera/tracking controls visible.
 - [x] Complete analyze-to-selected-passage browser verification or document the sandbox upload blocker precisely: authenticated analysis and passage-required screens were verified, but the sandbox upload helper could not target the hidden file input and the browser has no physical camera.
-- [ ] Add an integration-style regression that exercises successful passage analysis selection and verifies the reading-session surface renders camera/tracking controls.
-- [ ] Save a fresh checkpoint after these fixes and push the updated standalone repository state.
+- [x] Add an integration-style regression that exercises successful passage analysis selection and verifies the reading-session surface renders camera/tracking controls.
+- [x] Save a fresh checkpoint after these fixes and push the updated standalone repository state.
+
+# Bug Fix — Incomplete Session Payload During Camera Session
+
+- [x] Trace the incomplete session payload from camera-session API calls through cookie/session verification.
+- [x] Repair session handling so authenticated local development and OAuth sessions can open camera sessions without repeated auth errors.
+- [x] Add regression coverage for camera-session authentication and incomplete-payload handling.
+- [x] Run checks, tests, build, browser verification, save a checkpoint, and push the fix to GitHub.
+- [x] Add a protected reading-session request regression using a local development session token, including a legacy malformed-token request-context path.
+- [ ] Save a fresh checkpoint for the incomplete-session-payload repair and record its version.
+- [ ] Push the latest session-payload repair to braillehelp main and verify the remote HEAD.
+- [ ] Run a browser smoke test that opens Reading session with the repaired auth state, or document the physical-camera sandbox blocker precisely.

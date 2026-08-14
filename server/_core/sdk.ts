@@ -170,8 +170,10 @@ class SDKServer {
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
-        name: options.name || "",
+        // A local checkout may not have VITE_APP_ID. The verifier requires a
+        // non-empty appId, so use a development-only namespace for local tokens.
+        appId: ENV.appId || (ENV.isProduction ? "" : "local-development"),
+        name: options.name || "Local User",
       },
       options
     );
@@ -210,20 +212,19 @@ class SDKServer {
         algorithms: ["HS256"],
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
+      const isLocalDevelopmentSession = !ENV.isProduction && openId === ENV.devAuthOpenId;
+      const normalizedAppId = isNonEmptyString(appId) ? appId : isLocalDevelopmentSession ? "local-development" : null;
+      const normalizedName = isNonEmptyString(name) ? name : isLocalDevelopmentSession ? "Local Teacher" : null;
 
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
+      if (!isNonEmptyString(openId) || !normalizedAppId || !normalizedName) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
 
       return {
         openId,
-        appId,
-        name,
+        appId: normalizedAppId,
+        name: normalizedName,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
