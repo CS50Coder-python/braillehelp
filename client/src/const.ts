@@ -12,7 +12,10 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // call would desync it from an in-flight login and the callback would reject it
 // with "invalid oauth state". It returns void by design, so there is no URL to
 // stash across renders.
-export const getLoginMode = () => (import.meta.env.VITE_OAUTH_PORTAL_URL && import.meta.env.VITE_APP_ID ? "oauth" : "development") as "oauth" | "development";
+export const getLoginMode = () => {
+  if (import.meta.env.VITE_OAUTH_PORTAL_URL && import.meta.env.VITE_APP_ID) return "oauth" as const;
+  return import.meta.env.PROD ? "unconfigured" as const : "development" as const;
+};
 
 export const getLoginDestination = (config: { oauthPortalUrl?: string; appId?: string }, location: Pick<Location, "origin" | "pathname" | "search">) => {
   if (!config.oauthPortalUrl || !config.appId) return `/api/dev-login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;
@@ -27,6 +30,10 @@ export const getLoginDestination = (config: { oauthPortalUrl?: string; appId?: s
 export const startLogin = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
+  if (getLoginMode() === "unconfigured") {
+    window.alert("Sign-in is not configured for this deployment yet. Please contact the site administrator.");
+    return;
+  }
   const destination = getLoginDestination({ oauthPortalUrl, appId }, window.location);
   if (destination.startsWith("/api/dev-login")) {
     window.location.href = destination;
