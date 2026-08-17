@@ -15,18 +15,33 @@ import {
 
 const analysisSchema = { type: "object", properties: { text: { type: "string" }, confidence: { type: "number" }, brailleStandard: { type: "string" }, warnings: { type: "array", items: { type: "string" } }, cellCount: { type: "integer" }, lineCount: { type: "integer" } }, required: ["text", "confidence", "brailleStandard", "warnings", "cellCount", "lineCount"], additionalProperties: false } as const;
 function extractText(content: unknown) { if (typeof content === "string") return content; if (Array.isArray(content)) return content.map((part) => typeof part === "string" ? part : (part as { text?: string }).text ?? "").join(""); return ""; }
+
+type BrailleAnalysis = { text: string; confidence: number; brailleStandard: string; warnings: string[]; cellCount: number; lineCount: number };
+export function parseBrailleAnalysis(raw: string): BrailleAnalysis {
+  const withoutFences = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  const firstObject = withoutFences.indexOf("{");
+  const lastObject = withoutFences.lastIndexOf("}");
+  const candidates = firstObject >= 0 && lastObject > firstObject ? [withoutFences.slice(firstObject, lastObject + 1), withoutFences] : [withoutFences];
+  let parsed: unknown;
+  for (const candidate of candidates) {
+    try { parsed = JSON.parse(candidate); break; } catch { /* try the next normalized candidate */ }
+  }
+  if (!parsed || typeof parsed !== "object") throw new TRPCError({ code: "BAD_GATEWAY", message: "The Braille AI returned incomplete JSON. Try a clearer image or retry the analysis." });
+  const value = parsed as Record<string, unknown>;
+  if (typeof value.text !== "string") throw new TRPCError({ code: "BAD_GATEWAY", message: "The Braille AI response did not contain readable text. Try a clearer image or retry the analysis." });
+  return { text: value.text, confidence: typeof value.confidence === "number" ? value.confidence : 0, brailleStandard: typeof value.brailleStandard === "string" ? value.brailleStandard : "UEB_UNCONTRACTED", warnings: Array.isArray(value.warnings) ? value.warnings.filter((warning): warning is string => typeof warning === "string") : [], cellCount: typeof value.cellCount === "number" ? Math.max(0, Math.trunc(value.cellCount)) : 0, lineCount: typeof value.lineCount === "number" ? Math.max(0, Math.trunc(value.lineCount)) : 0 };
+}
 function normalizeText(value: string) { return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim(); }
 export function compareTexts(expected: string, transcript: string) { const expectedWords = normalizeText(expected).split(" ").filter(Boolean); const spokenWords = normalizeText(transcript).split(" ").filter(Boolean); const mismatches: string[] = []; const total = Math.max(expectedWords.length, spokenWords.length); for (let index = 0; index < total; index += 1) if (expectedWords[index] !== spokenWords[index]) mismatches.push(`word ${index + 1}: expected “${expectedWords[index] ?? "<missing>"}”, heard “${spokenWords[index] ?? "<missing>"}”`); return { matchScore: total ? Math.max(0, Math.round(((total - mismatches.length) / total) * 100)) : 0, mismatches }; }
 async function requireOwnedSession(sessionId: number, ownerUserId: number) { const detail = await getSessionWithEvents(sessionId, ownerUserId); if (!detail?.session) throw new TRPCError({ code: "NOT_FOUND", message: "Reading session not found." }); return detail; }
-export async function analyzeWithLocalAi(data: Buffer, mimeType: string, baseUrl = ENV.localAiUrl) {
-  if (!baseUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set LOCAL_AI_URL or the managed Forge AI variables before analyzing Braille images." });
+async function analyzeWithLocalAi(data: Buffer, mimeType: string) {
+  if (!ENV.localAiUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set LOCAL_AI_URL or the managed Forge AI variables before analyzing Braille images." });
   try {
     const form = new FormData();
     form.append("image", new Blob([new Uint8Array(data)], { type: mimeType }), "braille-page");
-    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/scan`, { method: "POST", body: form });
+    const response = await fetch(`${ENV.localAiUrl.replace(/\/$/, "")}/scan`, { method: "POST", body: form });
     if (!response.ok) throw new TRPCError({ code: "BAD_GATEWAY", message: `Local Braille AI returned HTTP ${response.status}. Start the service from legacy/local-ai before uploading.` });
-    const payload = await response.json() as { text?: string; confidence?: number; brailleStandard?: string; warnings?: string[]; lines?: unknown[]; cellCount?: number; lineCount?: number };
-    return { text: payload.text ?? "", confidence: payload.confidence ?? 0, brailleStandard: payload.brailleStandard ?? "UEB_UNCONTRACTED", warnings: payload.warnings ?? [], cellCount: payload.cellCount ?? 0, lineCount: payload.lineCount ?? payload.lines?.length ?? 0 };
+    return parseBrailleAnalysis(await response.text());
   } catch (error) {
     if (error instanceof TRPCError) throw error;
     throw new TRPCError({ code: "BAD_GATEWAY", message: "The local Braille AI service could not be reached. Start legacy/local-ai on port 8000 or remove LOCAL_AI_URL to use Forge AI." });
@@ -37,7 +52,7 @@ async function analyzeWithForge(dataUrl: string) {
   if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Braille analysis is not configured. Start a local Braille AI service on port 8000 or configure the managed Forge AI variables." });
   const response = await invokeLLM({ model: "gemini-3-flash-preview", messages: [{ role: "system", content: "You are a cautious Braille image analysis service. Read only clearly visible Braille cells. Do not invent missing cells. This is an assistive prototype, not a clinical or educational assessment. Return the requested JSON only." }, { role: "user", content: [{ type: "text", text: "Analyze this uploaded Braille page. Identify visible uncontracted or contracted Braille only when the image supports it. Report uncertainty in warnings. Count visible cells and lines." }, { type: "image_url", image_url: { url: dataUrl, detail: "high" } }] }], response_format: { type: "json_schema", json_schema: { name: "braille_analysis", strict: true, schema: analysisSchema } } });
   const raw = extractText(response.choices[0]?.message?.content);
-  return JSON.parse(raw) as { text: string; confidence: number; brailleStandard: string; warnings: string[]; cellCount: number; lineCount: number };
+  return parseBrailleAnalysis(raw);
 }
 
 export const appRouter = router({

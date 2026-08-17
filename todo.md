@@ -144,7 +144,18 @@
 - [x] Fall back from an unavailable LOCAL_AI_URL to Forge vision analysis when Forge is configured.
 - [x] Keep the camera reading session clean and expose visible finger position, confidence, trail, speed, rereads, skipped regions, and coverage metrics.
 - [x] Add regression coverage for provider fallback and camera-session metric visibility.
-- [ ] Run checks, tests, build, browser verification, save a checkpoint, and push the repair to braillehelp main.
+- [x] Run checks, tests, build, browser verification, save a checkpoint, and push the repair to braillehelp main; braillehelp main is at 4d0c5fc.
 - [x] Add or strengthen a runtime camera-session regression that directly verifies finger position, confidence, trail, speed, rereads, skipped regions, and coverage labels.
 - [x] Add a runtime camera-session assertion for the visible reading-speed label/value.
 - [x] Expose and test an explicit finger-position label/value, or revise the tracked requirement to the verified region/confidence/trail contract.
+- [x] Save a fresh managed checkpoint for the local-AI fallback and clean finger-tracking repair: 1738ed66.
+- [x] Run a focused browser smoke test for Analyze/Reading session after this change, or document the sandbox upload/camera blocker precisely: both surfaces opened; the passage-required guard rendered; hidden-file upload and physical camera access are unavailable in this sandbox.
+
+# Bug Fix — Malformed Braille AI JSON Response
+
+- [x] Reproduce and trace the `Unterminated string in JSON` failure through Forge/local-AI response parsing.
+- [x] Harden analysis parsing for fenced, wrapped, truncated, or otherwise malformed provider JSON and return an actionable error when recovery is impossible.
+- [x] Add regression coverage for malformed and recoverable AI responses.
+- [x] Run full checks, tests, build, and browser analysis smoke verification; 42 tests pass and the browser reached the Analyze Braille surface, while the sandbox could not submit its hidden file input.
+- [ ] Save a fresh checkpoint and push the complete repair to braillehelp main.
+- [x] Apply the shared Braille parser to local-AI responses and add a regression for fenced or explanatory local-AI JSON.
