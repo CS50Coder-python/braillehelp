@@ -26,10 +26,18 @@ export function parseBrailleAnalysis(raw: string): BrailleAnalysis {
   for (const candidate of candidates) {
     try { parsed = JSON.parse(candidate); break; } catch { /* try the next normalized candidate */ }
   }
-  if (!parsed || typeof parsed !== "object") throw new TRPCError({ code: "BAD_GATEWAY", message: "The Braille AI returned incomplete JSON. Try a clearer image or retry the analysis." });
+  if (!parsed || typeof parsed !== "object") {
+    const textMatch = withoutFences.match(/"text"\s*:\s*"((?:\\\\.|[^"\\\\])*)/);
+    if (textMatch?.[1]) {
+      let recoveredText = textMatch[1].replace(/\\\\$/g, "");
+      try { recoveredText = JSON.parse(`"${recoveredText}"`); } catch { recoveredText = recoveredText.replace(/\\\\(["\\\\/bfnrtu])/g, "$1"); }
+      if (recoveredText.trim()) return { text: recoveredText.trim(), confidence: 0, brailleStandard: "UEB_UNCONTRACTED", warnings: ["The AI response was truncated; review the detected text and retry with a clearer image if needed."], cellCount: 0, lineCount: 0 };
+    }
+    throw new TRPCError({ code: "BAD_GATEWAY", message: "The Braille AI returned incomplete JSON without readable text. Retry the analysis with a clear, well-lit image." });
+  }
   const value = parsed as Record<string, unknown>;
-  if (typeof value.text !== "string") throw new TRPCError({ code: "BAD_GATEWAY", message: "The Braille AI response did not contain readable text. Try a clearer image or retry the analysis." });
-  return { text: value.text, confidence: typeof value.confidence === "number" ? value.confidence : 0, brailleStandard: typeof value.brailleStandard === "string" ? value.brailleStandard : "UEB_UNCONTRACTED", warnings: Array.isArray(value.warnings) ? value.warnings.filter((warning): warning is string => typeof warning === "string") : [], cellCount: typeof value.cellCount === "number" ? Math.max(0, Math.trunc(value.cellCount)) : 0, lineCount: typeof value.lineCount === "number" ? Math.max(0, Math.trunc(value.lineCount)) : 0 };
+  if (typeof value.text !== "string" || !value.text.trim()) throw new TRPCError({ code: "BAD_GATEWAY", message: "The Braille AI response did not contain readable text. Retry with a clear, well-lit image." });
+  return { text: value.text.trim(), confidence: typeof value.confidence === "number" ? value.confidence : 0, brailleStandard: typeof value.brailleStandard === "string" ? value.brailleStandard : "UEB_UNCONTRACTED", warnings: Array.isArray(value.warnings) ? value.warnings.filter((warning): warning is string => typeof warning === "string") : [], cellCount: typeof value.cellCount === "number" ? Math.max(0, Math.trunc(value.cellCount)) : 0, lineCount: typeof value.lineCount === "number" ? Math.max(0, Math.trunc(value.lineCount)) : 0 };
 }
 function normalizeText(value: string) { return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim(); }
 export function compareTexts(expected: string, transcript: string) { const expectedWords = normalizeText(expected).split(" ").filter(Boolean); const spokenWords = normalizeText(transcript).split(" ").filter(Boolean); const mismatches: string[] = []; const total = Math.max(expectedWords.length, spokenWords.length); for (let index = 0; index < total; index += 1) if (expectedWords[index] !== spokenWords[index]) mismatches.push(`word ${index + 1}: expected “${expectedWords[index] ?? "<missing>"}”, heard “${spokenWords[index] ?? "<missing>"}”`); return { matchScore: total ? Math.max(0, Math.round(((total - mismatches.length) / total) * 100)) : 0, mismatches }; }

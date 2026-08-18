@@ -22,8 +22,14 @@ describe("Braille analysis response parsing", () => {
     expect(result.cellCount).toBe(8);
   });
 
-  it("converts truncated JSON into an actionable gateway error", () => {
-    expect(() => parseBrailleAnalysis('{"text":"The student read a long sentence that was cut off')).toThrow("returned incomplete JSON");
+  it("recovers readable text from truncated JSON and marks it uncertain", () => {
+    const result = parseBrailleAnalysis('{"text":"The student read a long sentence that was cut off');
+    expect(result.text).toBe("The student read a long sentence that was cut off");
+    expect(result.warnings[0]).toContain("truncated");
+  });
+
+  it("converts textless truncation into an actionable gateway error", () => {
+    expect(() => parseBrailleAnalysis('{"confidence":0.7,"warnings":[')).toThrow("without readable text");
   });
 });
 

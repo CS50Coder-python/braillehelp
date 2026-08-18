@@ -180,3 +180,11 @@
 - [x] Extend teacher benchmark interpretation with an age-based path or a clearly documented grade-to-age mapping.
 - [x] Add regression tests for calibration progression and audio start-cue invocation.
 - [x] Save a new checkpoint and push the latest core-workflow changes to braillehelp main, then verify the remote commit.
+
+# Bug Fix — Incomplete Braille AI JSON Retry
+
+- [x] Trace the current provider response parser and client error mapping for incomplete JSON.
+- [x] Add bounded retry/fallback behavior for truncated or recoverable Braille AI output.
+- [x] Improve the analysis UI error and retry guidance for image-quality/provider failures.
+- [x] Add regression tests for truncated, fenced, recoverable, and retry-exhausted responses.
+- [ ] Run checks/build, save a checkpoint, and synchronize the repair to braillehelp main.
