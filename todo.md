@@ -187,4 +187,11 @@
 - [x] Add bounded retry/fallback behavior for truncated or recoverable Braille AI output.
 - [x] Improve the analysis UI error and retry guidance for image-quality/provider failures.
 - [x] Add regression tests for truncated, fenced, recoverable, and retry-exhausted responses.
+- [x] Run checks/build, save a checkpoint, and synchronize the repair to braillehelp main; GitHub main is now 356a288.
+
+# Bug Fix — Negative Skipped Regions on Session Completion
+
+- [x] Trace the skippedRegions calculation and reading.complete payload path.
+- [x] Clamp skippedRegions at the tracker source and server completion boundary.
+- [x] Add regression coverage for negative skippedRegions and completion validation.
 - [ ] Run checks/build, save a checkpoint, and synchronize the repair to braillehelp main.
