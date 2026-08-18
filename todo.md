@@ -194,4 +194,12 @@
 - [x] Trace the skippedRegions calculation and reading.complete payload path.
 - [x] Clamp skippedRegions at the tracker source and server completion boundary.
 - [x] Add regression coverage for negative skippedRegions and completion validation.
-- [ ] Run checks/build, save a checkpoint, and synchronize the repair to braillehelp main.
+- [x] Run checks/build, save a checkpoint, and synchronize the repair to braillehelp main; GitHub main is now e0994a8.
+
+# Feature — Camera-First Live Reading Workspace
+
+- [x] Audit the current reading-session camera composition and overlay against the reference camera-first experience.
+- [x] Make the camera preview the primary workspace with a visible tracking frame, fingertip marker/trail, and stable live status.
+- [x] Add prominent real-time metrics for hand/finger detection, passage progress, elapsed time, reading speed, rereads, skips, coverage, and calibration state.
+- [x] Add regression coverage for the camera-first workspace and visible tracking labels.
+- [ ] Run checks/build/browser verification, save a checkpoint, and synchronize the UI upgrade to braillehelp main.

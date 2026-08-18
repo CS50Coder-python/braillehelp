@@ -11,7 +11,9 @@ describe("camera tracking overlay", () => {
       trail: [{ x: 0.2, y: 0.5, region: 1, confidence: 0.7 }, { x: 0.42, y: 0.5, region: 3, confidence: 0.88 }],
     }));
     expect(html).toContain("Finger tracking live");
-    expect(html).toContain("Finger position 42% × 50% · region 4");
+    expect(html).toContain("Hand/finger detected");
+    expect(html).toContain("TRACKING AREA");
+    expect(html).toContain("FINGER 42% × 50% · REGION 4");
     expect(html).toContain("88%");
     expect((html.match(/tracking-trail-dot/g) ?? []).length).toBe(2);
   });

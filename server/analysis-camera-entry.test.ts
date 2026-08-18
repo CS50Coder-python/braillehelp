@@ -50,7 +50,9 @@ describe("analyzed passage camera entry", () => {
     expect(html).toContain("A tactile reading passage");
 
     const overlay = renderToStaticMarkup(createElement(CameraTrackingOverlay, { point: { x: 0.42, y: 0.61, region: 3, confidence: 0.87 }, trail: [{ x: 0.2, y: 0.5, region: 1, confidence: 0.8 }], active: true }));
-    expect(overlay).toContain("Finger position 42% × 61% · region 4 · 87%");
+    expect(overlay).toContain("FINGER 42% × 61% · REGION 4 · 87%");
+    expect(overlay).toContain("TRACKING AREA");
+    expect(overlay).toContain("Hand/finger detected");
     expect(overlay).toContain("Finger tracking live");
     expect(overlay).toContain("tracking-trail-dot");
   });
