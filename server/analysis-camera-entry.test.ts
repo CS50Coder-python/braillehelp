@@ -39,7 +39,8 @@ describe("analyzed passage camera entry", () => {
     const html = renderToStaticMarkup(createElement(ReadingSession, { passageId: 42, onExit: () => {}, onAnalyze: () => {} }));
     expect(html).toContain("Live camera preview");
     expect(html).toContain("I consent to camera-derived movement telemetry");
-    expect(html).toContain("Give start cue &amp; begin");
+    expect(html).toContain("Open camera &amp; calibrate");
+    expect(html).toContain("Phone height estimate");
     expect(html).toContain("Motion signal");
     expect(html).toContain("Coverage");
     expect(html).toContain("Elapsed");

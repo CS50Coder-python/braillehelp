@@ -157,5 +157,26 @@
 - [x] Harden analysis parsing for fenced, wrapped, truncated, or otherwise malformed provider JSON and return an actionable error when recovery is impossible.
 - [x] Add regression coverage for malformed and recoverable AI responses.
 - [x] Run full checks, tests, build, and browser analysis smoke verification; 42 tests pass and the browser reached the Analyze Braille surface, while the sandbox could not submit its hidden file input.
-- [ ] Save a fresh checkpoint and push the complete repair to braillehelp main.
+- [x] Save a fresh checkpoint and push the complete repair to braillehelp main: checkpoint 8fef4410; GitHub main aca3e50.
 - [x] Apply the shared Braille parser to local-AI responses and add a regression for fenced or explanatory local-AI JSON.
+
+# Delivery — Open Source License
+
+- [x] Add a complete MIT License file to the linked braillehelp repository.
+- [x] Commit, push, and verify GitHub detects the license on main: commit 8dbcc0f; GitHub metadata reports SPDX license MIT.
+
+# Core Workflow Audit — Student Braille Reading
+
+- [x] Audit passage analysis, camera preview, calibration, audio start cue, visible finger tracking, rereads, skips, speed, and teacher-facing interpretation against the stated core workflow.
+- [x] Ensure the live camera view visibly overlays the tracked finger position across the Braille reading surface, not only a numeric telemetry panel.
+- [x] Ensure calibration and start-cue states are explicit and usable before live tracking begins.
+- [x] Add evidence-based age/grade speed bands with clear non-diagnostic interpretation and teacher review language.
+- [x] Add regression coverage for the core workflow and visible tracking behavior.
+- [x] Run full checks, build, browser verification, save a checkpoint, and push all necessary changes to braillehelp main.
+
+# Core Workflow Gap Repairs
+
+- [x] Replace timer-only calibration with explicit user-confirmed multi-height steps and persist calibration samples.
+- [x] Extend teacher benchmark interpretation with an age-based path or a clearly documented grade-to-age mapping.
+- [x] Add regression tests for calibration progression and audio start-cue invocation.
+- [x] Save a new checkpoint and push the latest core-workflow changes to braillehelp main, then verify the remote commit.
