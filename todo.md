@@ -202,4 +202,12 @@
 - [x] Make the camera preview the primary workspace with a visible tracking frame, fingertip marker/trail, and stable live status.
 - [x] Add prominent real-time metrics for hand/finger detection, passage progress, elapsed time, reading speed, rereads, skips, coverage, and calibration state.
 - [x] Add regression coverage for the camera-first workspace and visible tracking labels.
-- [ ] Run checks/build/browser verification, save a checkpoint, and synchronize the UI upgrade to braillehelp main.
+- [x] Run checks/build/browser verification, save a checkpoint, and synchronize the UI upgrade to braillehelp main; GitHub main is now a4d803f.
+
+# Feature — Actual Fingertip Tracking
+
+- [x] Audit the current motion-centroid tracker and browser hand-landmark dependency options.
+- [x] Replace pixel-motion position estimates with actual index-fingertip landmark coordinates and honest no-detection fallback.
+- [x] Keep reread/skip metrics based on the detected fingertip path and update visible confidence/status labels.
+- [x] Add regression coverage for fingertip landmark selection and no-hand behavior.
+- [ ] Run checks/build/browser validation, save a checkpoint, and synchronize the fix to braillehelp main.
