@@ -31,6 +31,21 @@ export function estimateMotionPoint(frame: Uint8ClampedArray, previous: Uint8Cla
   };
 }
 
+export function stabilizeMotionPoint(previous: { x: number; y: number } | null, candidate: MotionPoint, smoothing = 0.42, maxJump = 0.32): MotionPoint | null {
+  if (!candidate.detected) return null;
+  if (!previous) return candidate;
+  const jump = Math.hypot(candidate.x - previous.x, candidate.y - previous.y);
+  if (jump > maxJump) return null;
+  const alpha = Math.max(0.15, Math.min(0.8, smoothing));
+  return {
+    x: previous.x + (candidate.x - previous.x) * alpha,
+    y: previous.y + (candidate.y - previous.y) * alpha,
+    normalizedMotion: Math.min(1, jump * 8),
+    detected: true,
+    changedRatio: candidate.changedRatio,
+  };
+}
+
 export function estimateHorizontalPosition(frame: Uint8ClampedArray, previous: Uint8ClampedArray | null, width: number, threshold = 28) {
   const point = estimateMotionPoint(frame, previous, width, Math.max(1, Math.floor(frame.length / 4 / width)), threshold);
   return { position: point.x, normalizedMotion: point.normalizedMotion };

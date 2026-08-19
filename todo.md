@@ -272,4 +272,12 @@
 - [x] Gate tracking points, coverage, reading speed, reread, and skip metrics on real frame-change evidence.
 - [x] Add a visible no-detection state and stronger motion-region estimation for movement inside the camera frame.
 - [x] Add regression coverage for static frames, movement frames, and no false 100% coverage.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now 8b51569.
+
+# Bug Fix — Stable Fingertip Path and Metrics
+
+- [x] Audit why the current frame-difference tracker oscillates between motion detected and waiting.
+- [x] Implement persistent fingertip candidate detection with temporal smoothing and a lock-on window.
+- [x] Derive motion, coverage, rereads, skipped regions, and reading speed only from the stable tracked path.
+- [x] Add regression coverage for jitter rejection, lock-on continuity, and metric event classification.
 - [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyRegionTransition, estimateHorizontalPosition, estimateMotionPoint } from "../client/src/lib/tracking";
+import { classifyRegionTransition, estimateHorizontalPosition, estimateMotionPoint, stabilizeMotionPoint } from "../client/src/lib/tracking";
 
 describe("camera tracking helpers", () => {
   it("estimates horizontal position from changed frame pixels", () => {
@@ -32,6 +32,14 @@ describe("camera tracking helpers", () => {
     const result = estimateMotionPoint(frame, new Uint8ClampedArray(frame), 4, 4);
     expect(result.detected).toBe(false);
     expect(result.changedRatio).toBe(0);
+  });
+
+  it("rejects implausible jumps and smooths nearby motion", () => {
+    const candidate = { x: 0.6, y: 0.55, normalizedMotion: 0.2, detected: true, changedRatio: 0.04 };
+    expect(stabilizeMotionPoint({ x: 0.1, y: 0.5 }, { ...candidate, x: 0.95 })).toBeNull();
+    const smoothed = stabilizeMotionPoint({ x: 0.4, y: 0.5 }, candidate);
+    expect(smoothed?.x).toBeGreaterThan(0.4);
+    expect(smoothed?.x).toBeLessThan(0.6);
   });
 
   it("classifies revisits and jumps from tracked regions", () => {
