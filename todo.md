@@ -303,4 +303,12 @@
 - [x] Add an explicit reading-area ROI acquisition state and persistent visual candidate tracker.
 - [x] Feed acquired candidate coordinates into points, coverage, pauses, rereads, skips, and speed without false progress.
 - [x] Add regression coverage for no-evidence frames, candidate acquisition, and path continuity.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now 7b00226.
+
+# Bug Fix — Persistent Camera Lock and Path Evidence
+
+- [x] Audit why only one camera point is accepted before the tracker returns to Waiting.
+- [x] Preserve a candidate lock through brief visual-estimator misses and expose locked/acquiring/waiting states.
+- [x] Prevent pauses, rereads, skips, and speed from appearing meaningful until enough path evidence exists.
+- [x] Add regression coverage for one-point lock loss, reacquisition, and insufficient-path metrics.
 - [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.

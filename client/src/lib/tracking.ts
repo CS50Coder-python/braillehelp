@@ -59,7 +59,7 @@ export function estimateVisualCandidate(frame: Uint8ClampedArray, width: number,
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const chroma = max - min;
-    const warm = r > b * 1.08 && g > b * 1.02 && chroma > 0.08 && max > 0.18;
+    const warm = (r > b * 1.04 && g > b * 1.01 && chroma > 0.05 && max > 0.14) || (chroma > 0.16 && max > 0.2);
     if (!warm) continue;
     const nx = x / Math.max(1, width - 1);
     const ny = y / Math.max(1, height - 1);

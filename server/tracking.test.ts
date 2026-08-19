@@ -56,6 +56,13 @@ describe("camera tracking helpers", () => {
     expect(result.changedRatio).toBe(0);
   });
 
+  it("keeps a visual lock across a larger candidate jump", () => {
+    const candidate = { x: 0.58, y: 0.5, normalizedMotion: 0.04, detected: true, changedRatio: 0 };
+    const locked = stabilizeMotionPoint({ x: 0.12, y: 0.5 }, candidate, 0.42, 0.75);
+    expect(locked).not.toBeNull();
+    expect(locked?.x).toBeGreaterThan(0.12);
+  });
+
   it("rejects implausible jumps and smooths nearby motion", () => {
     const candidate = { x: 0.6, y: 0.55, normalizedMotion: 0.2, detected: true, changedRatio: 0.04 };
     expect(stabilizeMotionPoint({ x: 0.1, y: 0.5 }, { ...candidate, x: 0.95 })).toBeNull();
