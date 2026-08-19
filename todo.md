@@ -210,4 +210,12 @@
 - [x] Replace pixel-motion position estimates with actual index-fingertip landmark coordinates and honest no-detection fallback.
 - [x] Keep reread/skip metrics based on the detected fingertip path and update visible confidence/status labels.
 - [x] Add regression coverage for fingertip landmark selection and no-hand behavior.
-- [ ] Run checks/build/browser validation, save a checkpoint, and synchronize the fix to braillehelp main.
+- [x] Run checks/build/browser validation, save a checkpoint, and synchronize the fix to braillehelp main; GitHub main is now 621a65b.
+
+# Hackathon Competition Readiness
+
+- [x] Audit each stated rule against the active repository, live project state, license, AI workflow, and submission assets.
+- [x] Add a professional judging-facing README section explaining originality, meaningful AI use, architecture, privacy, limitations, and demo flow.
+- [x] Add low-risk product polish that improves first-run clarity and judge comprehension without changing the verified tracking pipeline.
+- [x] Prepare a submission checklist and approximately three-minute demo script.
+- [ ] Run full verification, save a checkpoint, and synchronize competition-readiness changes to braillehelp main.

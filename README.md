@@ -1,10 +1,31 @@
 # BrailleHelp
 
-BrailleHelp is an accessible reading-support application for visually impaired students. The active application uses a React frontend, an Express/tRPC server, Drizzle database models, browser camera tracking, Braille passage analysis, oral-reading transcription, owner-scoped privacy controls, and PostgreSQL-compatible persistence through the managed project environment.
+BrailleHelp is an accessible reading-support application for visually impaired students and the teachers who support them. It combines **Braille vision analysis**, **browser-based index-fingertip tracking**, **oral-reading comparison**, and **teacher-facing reading insights** in one consent-gated workflow.
 
-## Active application
+> **The core question:** not only whether a student finished a Braille passage, but where their reading pattern becomes difficult.
 
-The runnable application is at the repository root. The primary commands are:
+## Why this is meaningfully AI-powered
+
+AI is central to the product rather than decorative. A Braille image is analyzed by a vision model to produce the expected passage text, visible cell/line information, confidence, and uncertainty warnings. That AI-derived passage becomes the reference for the rest of the experience: the app uses it to calculate reading speed and to compare optional oral-reading transcription against the analyzed text. The browser then uses a hand-landmark model to follow the student’s index fingertip in real time while the server persists consent-scoped session events for teacher review.
+
+The product uses AI in two complementary places:
+
+| AI capability | Product purpose | Honest limitation |
+|---|---|---|
+| Braille image vision analysis | Converts an uploaded Braille page into a machine-readable reference passage and warns when the image is uncertain. | Teachers must review the result; poor lighting, blur, glare, or unusual layouts can reduce accuracy. |
+| Browser hand landmarks | Follows the index fingertip landmark over the live camera feed and emits movement, pause, reread, and skip events. | This is a prototype measurement aid, not a clinical or instructional diagnosis. |
+| Optional oral-reading transcription | Compares spoken reading with the analyzed passage and surfaces mismatches for review. | Speech recognition can vary with microphone quality, speech patterns, language, and background noise. |
+
+## Competition-ready product flow
+
+1. A teacher or student uploads a clear Braille image and runs **Analyze Braille AI**.
+2. The vision result is reviewed as the expected passage, with confidence and uncertainty messaging.
+3. The student opens **Reading session**, grants camera consent, and completes three explicit phone-height calibration samples.
+4. The app announces **“Ready. Begin reading now.”** and starts timing only after calibration.
+5. The live workspace shows the camera feed, capture frame, index-fingertip marker, movement trail, hand-detection state, confidence, passage progress, elapsed time, speed, pauses, rereads, skipped regions, and coverage.
+6. The teacher reviews the session alongside cautious grade/age oral-fluency references, accuracy/oral comparison when enabled, passage difficulty, accommodations, and repeated-session trends.
+
+## Run locally
 
 ```bash
 pnpm install
@@ -14,22 +35,13 @@ pnpm build
 pnpm dev
 ```
 
-Open the local URL printed by the development server. Camera access requires HTTPS or localhost, and the browser will request camera and microphone consent when a reading session starts.
+Open the local URL printed by the development server. Camera access requires HTTPS or localhost. On a physical phone, grant camera permission, use even lighting, keep the Braille page and fingertip in frame, and complete all three calibration steps. The hand-landmark runtime downloads its model assets in the browser, so the device needs network access during first use.
 
-### How to run a live reading session
+For local authentication, copy `.env.example` to `.env` when available, set `JWT_SECRET`, and leave `DEV_AUTH_ENABLED=true`. When managed OAuth variables are absent, the development-only `/api/dev-login` route creates a local teacher session. That route is disabled automatically when `NODE_ENV=production`. Persisted analysis and reading sessions require `DATABASE_URL`.
 
-1. Click **Analyze Braille AI** in the left navigation, choose a clear PNG, JPEG, or WebP photo of the Braille page, enter a passage name, and click **Analyze this page**. A successful analysis automatically selects the passage and opens **Reading session**.
-2. If you are already on the dashboard, click **Start camera session** after analysis. If no passage has been analyzed, the app intentionally shows **Analyze the page before the read** instead of opening an unmeasurable session.
-3. On the session screen, confirm the analyzed passage text, check **I consent to camera-derived movement telemetry**, optionally check microphone consent for oral comparison, and set the phone-height estimate. Press **Open camera & calibrate**, then physically place the phone at three heights and confirm each step. The app stores the three samples, averages the calibrated height, announces **“Ready. Begin reading now.”**, and only then starts the timed reading session. The browser shows the live video and overlays the estimated finger point, movement trail, region, and confidence.
-4. While the student reads, the **LIVE METRICS** panel shows motion signal, coverage, elapsed time, pauses, rereads, and skipped regions. It also shows an approximate grade/age oral-fluency reference using the selected season and an editable age fallback when no grade is linked. Press **Finish & save session** to calculate reading speed from analyzed word count and elapsed time and persist the event trail.
+## AI provider options
 
-The tracker is a browser-side motion-centroid prototype, not a validated finger-tip detector. Test it on a localhost or HTTPS device with a physical camera before using results for instructional decisions. The grade/age comparison is an approximate oral-reading-fluency reference based on Hasbrouck–Tindal 2017 norms for grades 1–6; it is not a diagnosis or a Braille-specific standard. Teachers should interpret it alongside accuracy, comprehension, passage difficulty, accommodations, and repeated-session trends.
-
-For local authentication, copy `.env.example` to `.env`, set `JWT_SECRET`, and leave `DEV_AUTH_ENABLED=true`. When the managed OAuth variables are absent, the Sign in button uses the development-only `/api/dev-login` route and creates a local teacher session. This route is disabled automatically when `NODE_ENV=production`. When `VITE_OAUTH_PORTAL_URL` and `VITE_APP_ID` are configured, the same button uses the managed OAuth flow instead.
-
-The root app is the source of truth for the current product. It includes the live self-camera preview, a page-camera toggle, a real-time 2D motion overlay with movement trail and confidence, Braille image analysis, oral-reading comparison, session metrics, database persistence, and privacy/retention controls. Persisted analysis and reading sessions require `DATABASE_URL`.
-
-For standalone image analysis, start the included local service in another terminal:
+The managed application uses the configured Forge AI variables. The legacy local service remains available for standalone experiments:
 
 ```bash
 cd legacy/local-ai
@@ -39,13 +51,26 @@ pip install -r requirements.txt
 uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Then set `LOCAL_AI_URL=http://127.0.0.1:8000` in `.env`. The active server uploads the image to `/scan`, stores the returned analyzed text and confidence, and uses that passage as the expected text for camera and oral-reading metrics. The local model weights must be supplied separately under `legacy/local-ai/models`; otherwise remove `LOCAL_AI_URL` and use the managed Forge AI variables. If the local service is unreachable, the app now reports an actionable provider message instead of a generic browser fetch error; in development, an optional Forge storage-upload failure no longer blocks the AI analysis request.
+Then set `LOCAL_AI_URL=http://127.0.0.1:8000`. If the local service is unavailable, the active server returns an actionable provider message and can fall back to Forge vision when configured. Malformed or incomplete AI JSON is parsed defensively; readable partial text is marked uncertain, while unrecoverable responses remain retryable.
 
-## Environment
+## Evidence and interpretation guardrails
 
-Do not commit `.env` files or secrets. This repository does not include a committed `.env.example`; create a local `.env` file yourself or export the variables in your shell. In the managed environment, database, authentication, storage, and built-in AI variables are injected by the platform. For standalone development, use `DEV_AUTH_ENABLED=true`, `JWT_SECRET` (or the development fallback), and either the managed Forge variables `BUILT_IN_FORGE_API_URL` plus `BUILT_IN_FORGE_API_KEY`, or start `legacy/local-ai` on port 8000. Set `LOCAL_AI_URL=http://127.0.0.1:8000` only when that service is running. Set `OAUTH_SERVER_URL`, `VITE_APP_ID`, and `VITE_OAUTH_PORTAL_URL` only when enabling real Manus OAuth; local development login does not require them.
+The teacher reference card uses approximate fall/winter/spring oral-reading-fluency ranges derived from Hasbrouck–Tindal 2017 norms for grades 1–6, with an age-to-grade reference path when no grade is linked. These are **not Braille-specific norms, diagnoses, placement recommendations, or pass/fail thresholds**. Teachers should interpret speed with accuracy, comprehension, passage difficulty, disability accommodations, language background, and longitudinal trends.
 
-After schema changes, generate and apply the Drizzle migration using the project’s database workflow. Do not run destructive database commands against production data without a reviewed migration.
+## Privacy and safety
+
+Camera movement telemetry, oral-reading recordings, transcriptions, and student-linked sessions are consent-gated and owner-scoped. The interface exposes retention and deletion controls. Do not use prototype metrics as the sole basis for educational, clinical, or disciplinary decisions, and do not upload identifiable student data to an unapproved environment.
+
+## Architecture
+
+| Layer | Responsibility |
+|---|---|
+| React 19 + Tailwind | Accessible dashboard, AI analysis workflow, calibration, camera workspace, live overlays, metrics, and teacher review surfaces. |
+| MediaPipe Tasks Vision | Browser-side hand landmarks and index-fingertip coordinate extraction. |
+| Express + tRPC | Typed analysis, session lifecycle, tracking-event, transcription, privacy, and classroom procedures. |
+| Drizzle ORM | PostgreSQL-compatible schema for passages, students, reading sessions, and tracking events. |
+| Forge AI / local AI bridge | Braille vision analysis and optional voice/transcription integrations. |
+| Vitest | Regression coverage for auth, analysis recovery, tracking, calibration, benchmarks, privacy, and UI contracts. |
 
 ## Repository layout
 
@@ -54,20 +79,15 @@ After schema changes, generate and apply the Drizzle migration using the project
 | `client/` | Active React application and accessible reading-session interface. |
 | `server/` | Active Express/tRPC backend, database helpers, AI/storage integration, and tests. |
 | `drizzle/` | Active database schema and migrations. |
-| `docs/` | Product, privacy, and integration documentation. |
-| `legacy/frontend/` | Original team frontend retained for reference or future migration. |
-| `legacy/backend/` | Original team backend retained for reference or future service extraction. |
-| `legacy/local-ai/` | Original local-AI experiments retained for future model integration. |
-| `legacy/RestAPI/` | Original REST API service retained for reference. |
+| `docs/` | Product, privacy, benchmark, and competition documentation. |
+| `legacy/` | Earlier team frontend/backend/REST/local-AI experiments retained for reference. |
 
-The `legacy/` services are not automatically started by the root application. Keep them available until the team confirms that their functionality has been migrated. Do not run a legacy backend and the active backend on the same port without an explicit integration plan.
+The root application is the source of truth for the current demo. Generated folders such as `.vite`, `dist`, `node_modules`, logs, and TypeScript build metadata are excluded from version control.
 
-Generated folders such as `.vite`, `dist`, `node_modules`, logs, and TypeScript build metadata are intentionally excluded from version control. They are regenerated locally.
+## Open-source and originality statement
 
-## Current camera limitation
+BrailleHelp is released under the MIT License. The project uses standard open-source libraries and managed platform integrations, while the product workflow, calibration model, privacy controls, analysis-to-session contract, tracking metrics, teacher interpretation surface, and recovery behavior represent the team’s application work. Existing tools and starter infrastructure are documented rather than presented as original invention.
 
-The camera overlay currently estimates a 2D motion centroid from frame-to-frame pixel changes. It is useful for demonstrating observable movement and session telemetry, but it is not a validated anatomical finger-tip detector. Replace or supplement it with a validated hand-landmark model before using measurements for instructional or clinical decisions.
+## Hackathon submission checklist
 
-## Privacy
-
-Camera movement telemetry, oral-reading recordings, transcriptions, and student-linked session data are consent-gated and owner-scoped. Use the in-app privacy controls to set retention windows, purge expired data, or delete student records. Review the project documentation before collecting real student data.
+The competition submission should include the public repository, the hosted project URL, a short demo video, and a completed Devpost entry. A suggested approximately three-minute narrative is included in `docs/HACKATHON-SUBMISSION.md`.

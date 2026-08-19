@@ -38,3 +38,11 @@
 @media(max-width:900px){.live-camera .video-frame{height:clamp(300px,65vw,440px)}}
 
 .camera-telemetry-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}.camera-telemetry-strip>div{display:flex;flex-direction:column;gap:3px;background:#F1F4EE;border:1px solid #E2E7DE;border-radius:7px;padding:8px 9px;min-width:0}.camera-telemetry-strip span{font-size:8px;letter-spacing:.09em;color:#84918C;font-weight:800}.camera-telemetry-strip strong{font-size:12px;color:#294D4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.camera-telemetry-strip>div:first-child strong{color:#4B8B4F}.tracking-label{text-transform:uppercase;letter-spacing:.02em}.tracking-capture-frame,.tracking-crosshair,.tracking-label,.tracking-live-pill,.tracking-detection-pill,.tracking-trail-dot{z-index:2}@media(max-width:600px){.camera-telemetry-strip{grid-template-columns:repeat(2,1fr)}}
+
+.proof-strip{display:flex;align-items:center;gap:14px;margin:0 0 22px;padding:14px 18px;border:1px solid rgba(24,55,76,.12);border-radius:18px;background:rgba(255,255,255,.62);box-shadow:0 8px 24px rgba(24,55,76,.05)}
+.proof-strip>span:not(.proof-arrow){display:grid;grid-template-columns:auto 1fr;column-gap:9px;align-items:center;min-width:0;flex:1;color:var(--ink)}
+.proof-strip>span:not(.proof-arrow) svg{grid-row:span 2;color:var(--teal)}
+.proof-strip strong{font-size:13px;letter-spacing:.02em}
+.proof-strip small{color:var(--muted);font-size:11px;line-height:1.3}
+.proof-strip .proof-arrow{flex:0 0 auto;color:var(--muted);opacity:.55}
+@media (max-width:700px){.proof-strip{align-items:stretch;gap:9px;padding:12px;flex-direction:column}.proof-strip .proof-arrow{display:none}.proof-strip>span:not(.proof-arrow){padding:5px 0}}
