@@ -288,4 +288,11 @@
 - [x] Add a short lock-on/missed-frame grace window and retain the last stable point during brief losses.
 - [x] Compute motion signal from recent valid movement rather than the current frame alone.
 - [x] Add regression coverage for intermittent misses, sustained loss, and nonzero valid motion.
-- [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now b8e72cf.
+
+# Bug Fix — Correct Reading Event Metrics
+
+- [x] Audit why same-region samples are being counted as rereads and why pauses/skips remain zero.
+- [x] Require sustained dwell for pauses, leave-and-return for rereads, and real multi-region jumps for skipped regions.
+- [x] Add regression coverage for pause, reread, and skip event sequences.
+- [ ] Run full checks/build/browser validation, save a checkpoint, and push the metric repair to braillehelp main.

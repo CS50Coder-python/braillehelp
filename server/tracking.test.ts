@@ -44,6 +44,7 @@ describe("camera tracking helpers", () => {
 
   it("classifies revisits and jumps from tracked regions", () => {
     const visited = new Set([1, 2]);
+    expect(classifyRegionTransition(2, 2, visited)).toBe("same_region");
     expect(classifyRegionTransition(2, 1, visited)).toBe("reread");
     expect(classifyRegionTransition(2, 5, visited)).toBe("skip");
     expect(classifyRegionTransition(2, 3, visited)).toBe("advance");
