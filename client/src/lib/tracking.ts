@@ -46,6 +46,34 @@ export function stabilizeMotionPoint(previous: { x: number; y: number } | null, 
   };
 }
 
+export type VisualCandidate = { x: number; y: number; confidence: number; detected: boolean };
+
+/** Acquires a persistent warm/high-contrast foreground candidate inside the camera frame. This is a fallback for devices where landmark WASM cannot initialize. */
+export function estimateVisualCandidate(frame: Uint8ClampedArray, width: number, height: number, previous: { x: number; y: number } | null = null): VisualCandidate {
+  const points: Array<{ x: number; y: number; weight: number }> = [];
+  for (let y = 0; y < height; y += 2) for (let x = 0; x < width; x += 2) {
+    const index = (y * width + x) * 4;
+    const r = frame[index] / 255;
+    const g = frame[index + 1] / 255;
+    const b = frame[index + 2] / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = max - min;
+    const warm = r > b * 1.08 && g > b * 1.02 && chroma > 0.08 && max > 0.18;
+    if (!warm) continue;
+    const nx = x / Math.max(1, width - 1);
+    const ny = y / Math.max(1, height - 1);
+    const distance = previous ? Math.hypot(nx - previous.x, ny - previous.y) : 0;
+    const weight = (0.5 + chroma) * (previous ? Math.max(0.05, 1 - distance * 1.8) : 1);
+    points.push({ x: nx, y: ny, weight });
+  }
+  if (points.length < 18) return { x: previous?.x ?? 0, y: previous?.y ?? 0.5, confidence: 0, detected: false };
+  const weightTotal = points.reduce((sum, point) => sum + point.weight, 0);
+  const x = points.reduce((sum, point) => sum + point.x * point.weight, 0) / weightTotal;
+  const y = points.reduce((sum, point) => sum + point.y * point.weight, 0) / weightTotal;
+  return { x, y, confidence: Math.min(0.82, 0.35 + points.length / 700), detected: true };
+}
+
 export function estimateHorizontalPosition(frame: Uint8ClampedArray, previous: Uint8ClampedArray | null, width: number, threshold = 28) {
   const point = estimateMotionPoint(frame, previous, width, Math.max(1, Math.floor(frame.length / 4 / width)), threshold);
   return { position: point.x, normalizedMotion: point.normalizedMotion };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyRegionTransition, estimateHorizontalPosition, estimateMotionPoint, stabilizeMotionPoint } from "../client/src/lib/tracking";
+import { classifyRegionTransition, estimateHorizontalPosition, estimateMotionPoint, estimateVisualCandidate, stabilizeMotionPoint } from "../client/src/lib/tracking";
 
 describe("camera tracking helpers", () => {
   it("estimates horizontal position from changed frame pixels", () => {
@@ -25,6 +25,28 @@ describe("camera tracking helpers", () => {
     expect(result.x).toBeGreaterThan(0.45);
     expect(result.y).toBeGreaterThan(0.65);
     expect(result.normalizedMotion).toBeGreaterThan(0);
+  });
+
+  it("acquires a visual candidate from a warm foreground patch", () => {
+    const width = 20;
+    const height = 12;
+    const frame = new Uint8ClampedArray(width * height * 4);
+    for (let y = 2; y < 10; y++) for (let x = 10; x < 19; x++) {
+      const index = (y * width + x) * 4;
+      frame[index] = 190;
+      frame[index + 1] = 125;
+      frame[index + 2] = 80;
+      frame[index + 3] = 255;
+    }
+    const result = estimateVisualCandidate(frame, width, height);
+    expect(result.detected).toBe(true);
+    expect(result.x).toBeGreaterThan(0.5);
+    expect(result.confidence).toBeGreaterThan(0);
+  });
+
+  it("does not acquire a candidate from an empty frame", () => {
+    const frame = new Uint8ClampedArray(20 * 12 * 4);
+    expect(estimateVisualCandidate(frame, 20, 12).detected).toBe(false);
   });
 
   it("does not detect a static frame", () => {

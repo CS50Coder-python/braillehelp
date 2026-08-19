@@ -295,4 +295,12 @@
 - [x] Audit why same-region samples are being counted as rereads and why pauses/skips remain zero.
 - [x] Require sustained dwell for pauses, leave-and-return for rereads, and real multi-region jumps for skipped regions.
 - [x] Add regression coverage for pause, reread, and skip event sequences.
-- [ ] Run full checks/build/browser validation, save a checkpoint, and push the metric repair to braillehelp main.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the metric repair to braillehelp main; GitHub main is now 4a3fc3e.
+
+# Bug Fix — Camera ROI Tracking Acquisition
+
+- [x] Audit why camera frames produce no usable motion evidence despite an active video element.
+- [x] Add an explicit reading-area ROI acquisition state and persistent visual candidate tracker.
+- [x] Feed acquired candidate coordinates into points, coverage, pauses, rereads, skips, and speed without false progress.
+- [x] Add regression coverage for no-evidence frames, candidate acquisition, and path continuity.
+- [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.
