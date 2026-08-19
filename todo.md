@@ -280,4 +280,12 @@
 - [x] Implement persistent fingertip candidate detection with temporal smoothing and a lock-on window.
 - [x] Derive motion, coverage, rereads, skipped regions, and reading speed only from the stable tracked path.
 - [x] Add regression coverage for jitter rejection, lock-on continuity, and metric event classification.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now a197bf5.
+
+# Bug Fix — Tracking Detection Hysteresis
+
+- [x] Audit why brief missed frames reset the tracker and motion signal to zero.
+- [x] Add a short lock-on/missed-frame grace window and retain the last stable point during brief losses.
+- [x] Compute motion signal from recent valid movement rather than the current frame alone.
+- [x] Add regression coverage for intermittent misses, sustained loss, and nonzero valid motion.
 - [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.
