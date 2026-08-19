@@ -218,4 +218,12 @@
 - [x] Add a professional judging-facing README section explaining originality, meaningful AI use, architecture, privacy, limitations, and demo flow.
 - [x] Add low-risk product polish that improves first-run clarity and judge comprehension without changing the verified tracking pipeline.
 - [x] Prepare a submission checklist and approximately three-minute demo script.
-- [ ] Run full verification, save a checkpoint, and synchronize competition-readiness changes to braillehelp main.
+- [x] Run full verification, save a checkpoint, and synchronize competition-readiness changes to braillehelp main; GitHub main is now b586735.
+
+# Bug Fix — Hand Tracking Aborted Initialization
+
+- [x] Trace the MediaPipe WASM/model asset and GPU initialization path causing `Aborted()`.
+- [x] Add package-local asset resolution and GPU-to-CPU detector fallback.
+- [x] Replace raw initialization errors with clear retry/recovery state in the session UI.
+- [x] Add regression coverage for detector configuration/fallback behavior.
+- [ ] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main.
