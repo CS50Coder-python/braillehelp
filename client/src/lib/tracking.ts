@@ -1,9 +1,9 @@
 export type RegionEvent = "first_region" | "advance" | "reread" | "skip" | "same_region";
 
-export type MotionPoint = { x: number; y: number; normalizedMotion: number };
+export type MotionPoint = { x: number; y: number; normalizedMotion: number; detected: boolean; changedRatio: number };
 
 export function estimateMotionPoint(frame: Uint8ClampedArray, previous: Uint8ClampedArray | null, width: number, height: number, threshold = 28): MotionPoint {
-  if (!previous || previous.length !== frame.length) return { x: 0.05, y: 0.5, normalizedMotion: 0 };
+  if (!previous || previous.length !== frame.length) return { x: 0, y: 0.5, normalizedMotion: 0, detected: false, changedRatio: 0 };
   let totalDifference = 0;
   let changedPixels = 0;
   let changedX = 0;
@@ -18,10 +18,16 @@ export function estimateMotionPoint(frame: Uint8ClampedArray, previous: Uint8Cla
       changedY += Math.floor(pixelIndex / width);
     }
   }
+  const pixelCount = Math.max(1, frame.length / 4);
+  const changedRatio = changedPixels / pixelCount;
+  const normalizedMotion = Math.min(1, totalDifference / 120000);
+  const detected = changedPixels >= Math.max(1, Math.ceil(pixelCount * 0.002)) && normalizedMotion >= 0.005;
   return {
-    x: changedPixels > 0 ? Math.max(0, Math.min(1, changedX / changedPixels / width)) : 0.05,
-    y: changedPixels > 0 ? Math.max(0, Math.min(1, changedY / changedPixels / height)) : 0.5,
-    normalizedMotion: Math.min(1, totalDifference / 120000),
+    x: detected ? Math.max(0, Math.min(1, changedX / changedPixels / width)) : 0,
+    y: detected ? Math.max(0, Math.min(1, changedY / changedPixels / height)) : 0.5,
+    normalizedMotion,
+    detected,
+    changedRatio,
   };
 }
 

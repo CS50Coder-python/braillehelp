@@ -264,4 +264,12 @@
 - [x] Make the browser-safe motion tracker the primary path and remove model startup from the critical session loop.
 - [x] Update telemetry and error text so the active tracker is accurately described without a misleading AI failure warning.
 - [x] Add regression coverage for stable tracker startup and preserved metrics continuity.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now e242ef8.
+
+# Bug Fix — Honest Real-Time Finger Tracking
+
+- [x] Audit why zero motion produces a marker/coverage result and why the current estimator does not identify meaningful finger movement.
+- [x] Gate tracking points, coverage, reading speed, reread, and skip metrics on real frame-change evidence.
+- [x] Add a visible no-detection state and stronger motion-region estimation for movement inside the camera frame.
+- [x] Add regression coverage for static frames, movement frames, and no false 100% coverage.
 - [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.

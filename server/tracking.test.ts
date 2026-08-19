@@ -27,6 +27,13 @@ describe("camera tracking helpers", () => {
     expect(result.normalizedMotion).toBeGreaterThan(0);
   });
 
+  it("does not detect a static frame", () => {
+    const frame = new Uint8ClampedArray(4 * 4 * 4);
+    const result = estimateMotionPoint(frame, new Uint8ClampedArray(frame), 4, 4);
+    expect(result.detected).toBe(false);
+    expect(result.changedRatio).toBe(0);
+  });
+
   it("classifies revisits and jumps from tracked regions", () => {
     const visited = new Set([1, 2]);
     expect(classifyRegionTransition(2, 1, visited)).toBe("reread");
