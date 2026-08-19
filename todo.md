@@ -256,4 +256,12 @@
 - [x] Allow a camera session to continue when MediaPipe fails, using a reliable browser-safe fallback and honest detection labeling.
 - [x] Preserve three-step calibration, audio start cue, fingertip overlay, speed, rereads, skipped regions, coverage, and teacher benchmark metrics in fallback mode.
 - [x] Add regression coverage for model failure fallback and live session continuity.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now c0112e4.
+
+# Bug Fix — Stable Camera Tracker as Primary Path
+
+- [x] Audit why the live session still initializes MediaPipe and emits the fallback warning.
+- [x] Make the browser-safe motion tracker the primary path and remove model startup from the critical session loop.
+- [x] Update telemetry and error text so the active tracker is accurately described without a misleading AI failure warning.
+- [x] Add regression coverage for stable tracker startup and preserved metrics continuity.
 - [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.
