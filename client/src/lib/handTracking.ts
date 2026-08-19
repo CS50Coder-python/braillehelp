@@ -32,6 +32,10 @@ export function getHandLandmarker() {
   return detectorPromise;
 }
 
+export function motionFallbackDetection(point: { x: number; y: number }): FingertipDetection {
+  return { x: Math.max(0, Math.min(1, point.x)), y: Math.max(0, Math.min(1, point.y)), confidence: 0.35 };
+}
+
 export function pickIndexFingertip(result: HandLandmarkerResult): FingertipDetection {
   const hand = result.landmarks?.[0];
   const fingertip = hand?.[8];

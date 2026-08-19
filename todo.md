@@ -248,4 +248,12 @@
 - [x] Compare the current hand-tracking runtime against the last known-good checkpoint from yesterday.
 - [x] Restore the safest working detector path, reverting only the regression-causing WASM/runtime changes.
 - [x] Run focused camera/session tests, TypeScript, and production build.
-- [ ] Save a checkpoint and push the restored repair to braillehelp main.
+- [x] Save a checkpoint and push the restored repair to braillehelp main; GitHub main is now 75c07f1.
+
+# Feature — Non-Blocking Camera Tracking Recovery
+
+- [x] Audit the failing model startup and the live session’s current tracking/error state flow.
+- [x] Allow a camera session to continue when MediaPipe fails, using a reliable browser-safe fallback and honest detection labeling.
+- [x] Preserve three-step calibration, audio start cue, fingertip overlay, speed, rereads, skipped regions, coverage, and teacher benchmark metrics in fallback mode.
+- [x] Add regression coverage for model failure fallback and live session continuity.
+- [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.
