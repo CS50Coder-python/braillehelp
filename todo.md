@@ -226,4 +226,12 @@
 - [x] Add package-local asset resolution and GPU-to-CPU detector fallback.
 - [x] Replace raw initialization errors with clear retry/recovery state in the session UI.
 - [x] Add regression coverage for detector configuration/fallback behavior.
+- [x] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main; GitHub main is now 21e39ad.
+
+# Bug Fix — Recurring Uncaught MediaPipe WASM Abort
+
+- [x] Trace the uncaught WASM abort and current CDN/local asset serving path.
+- [x] Serve stable local MediaPipe WASM assets and harden detector initialization.
+- [x] Contain runtime aborts so they do not surface as uncaught console failures.
+- [x] Add regression coverage for local asset configuration and abort recovery.
 - [ ] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHandTrackingError, pickIndexFingertip } from "../client/src/lib/handTracking";
+import { HAND_TRACKING_WASM_ASSET, normalizeHandTrackingError, pickIndexFingertip } from "../client/src/lib/handTracking";
 
 describe("index fingertip tracking", () => {
   it("selects landmark 8 and clamps its normalized position", () => {
@@ -9,7 +9,8 @@ describe("index fingertip tracking", () => {
     expect(result).toEqual({ x: 1, y: 0, confidence: 0.93 });
   });
 
-  it("normalizes aborted runtime failures into recovery guidance", () => {
+  it("uses the app-local WASM runtime and normalizes aborted failures", () => {
+    expect(HAND_TRACKING_WASM_ASSET).toBe("/mediapipe/wasm");
     expect(normalizeHandTrackingError(new Error("Aborted() - memory access"))).toContain("Reload once");
     expect(normalizeHandTrackingError(new Error("network request failed"))).toContain("network connection");
   });
