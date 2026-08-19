@@ -91,3 +91,13 @@ BrailleHelp is released under the MIT License. The project uses standard open-so
 ## Hackathon submission checklist
 
 The competition submission should include the public repository, the hosted project URL, a short demo video, and a completed Devpost entry. A suggested approximately three-minute narrative is included in `docs/HACKATHON-SUBMISSION.md`.
+
+## Judge-ready camera demonstration
+
+For a reliable demonstration, use a modern mobile browser over HTTPS, select **Show page camera**, keep the phone fixed above the Braille page, and use even front lighting. Complete all three calibration confirmations before reading. The live workspace reports `Acquiring a stable path`, `Visual path tracking`, or `Tracking locked`; it does not claim pause, reread, skipped-region, coverage, or reading-speed results until a stable multi-point path has been acquired. If evidence is insufficient, the metrics remain `—` rather than presenting unsupported measurements.
+
+The camera workflow is privacy-preserving: video remains in the browser and the server receives movement events rather than a video recording. The visual fallback is a browser-compatible path estimator, not a substitute for validated clinical hand-landmark recognition. Demonstrations should describe it accurately as camera-derived visual path tracking and should be validated by a teacher before educational use.
+
+### Three-minute demo sequence
+
+Begin with the accessibility problem and show the AI Braille-page analysis. Open a reading session, select the page camera, grant camera permission, and complete the three-height calibration. After the spoken start cue, move a clearly visible finger slowly across the page, pause briefly, leave and return to a region, and make one deliberate jump. Show the stable tracking marker and teacher metrics only after the path has acquired enough evidence. Finish the session and show the persisted result. If the device cannot acquire a stable path, do not present inferred metrics as a successful tracking result; record the limitation and use a controlled retest.

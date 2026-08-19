@@ -311,4 +311,13 @@
 - [x] Preserve a candidate lock through brief visual-estimator misses and expose locked/acquiring/waiting states.
 - [x] Prevent pauses, rereads, skips, and speed from appearing meaningful until enough path evidence exists.
 - [x] Add regression coverage for one-point lock loss, reacquisition, and insufficient-path metrics.
-- [ ] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the repair to braillehelp main; GitHub main is now f703b2e.
+
+# Hackathon Judge-Readiness Upgrade
+
+- [x] Audit the current camera workflow, metric claims, and external submission blockers.
+- [x] Add deterministic camera acquisition diagnostics with camera-ready, acquisition, locked, and insufficient-evidence states.
+- [x] Make the tracking frame and metrics truthful: no unsupported 0%, 100%, WPM, pause, reread, or skip claims.
+- [x] Add judge-facing setup guidance and a concise demo mode/protocol without changing privacy safeguards.
+- [x] Update the README and submission checklist with honest camera limitations and the reliable demo sequence.
+- [ ] Run full checks/build/browser validation, save a checkpoint, and push the judge-readiness upgrade to braillehelp main.
