@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HAND_TRACKING_WASM_ASSET, isBenignMediaPipeLog, normalizeHandTrackingError, pickIndexFingertip } from "../client/src/lib/handTracking";
+import { HAND_TRACKING_WASM_ASSET, normalizeHandTrackingError, pickIndexFingertip } from "../client/src/lib/handTracking";
 
 describe("index fingertip tracking", () => {
   it("selects landmark 8 and clamps its normalized position", () => {
@@ -9,11 +9,9 @@ describe("index fingertip tracking", () => {
     expect(result).toEqual({ x: 1, y: 0, confidence: 0.93 });
   });
 
-  it("uses the app-local WASM runtime and normalizes aborted failures", () => {
-    expect(HAND_TRACKING_WASM_ASSET).toBe("/mediapipe/wasm");
-    expect(isBenignMediaPipeLog("INFO: Created TensorFlow Lite XNNPACK delegate for CPU.")).toBe(true);
-    expect(isBenignMediaPipeLog("Aborted()")).toBe(false);
-    expect(normalizeHandTrackingError(new Error("Aborted() - memory access"))).toContain("Reload once");
+  it("uses the known-good vision runtime and normalizes aborted failures", () => {
+    expect(HAND_TRACKING_WASM_ASSET).toContain("cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm");
+    expect(normalizeHandTrackingError(new Error("Aborted() - memory access"))).toContain("camera permission");
     expect(normalizeHandTrackingError(new Error("network request failed"))).toContain("network connection");
   });
 

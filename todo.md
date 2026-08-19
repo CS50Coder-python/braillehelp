@@ -241,4 +241,11 @@
 - [x] Trace the CPU WASM abort and debug-collector treatment of XNNPACK informational output.
 - [x] Implement safer detector startup and contain backend console noise without hiding real application errors.
 - [x] Add regression coverage for abort normalization and benign XNNPACK log handling.
-- [ ] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main.
+- [x] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main; GitHub main is now 27d28af.
+
+# Bug Fix — Restore Previously Working Hand Tracking
+
+- [x] Compare the current hand-tracking runtime against the last known-good checkpoint from yesterday.
+- [x] Restore the safest working detector path, reverting only the regression-causing WASM/runtime changes.
+- [x] Run focused camera/session tests, TypeScript, and production build.
+- [ ] Save a checkpoint and push the restored repair to braillehelp main.
