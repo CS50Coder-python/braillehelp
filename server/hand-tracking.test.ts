@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HAND_TRACKING_WASM_ASSET, normalizeHandTrackingError, pickIndexFingertip } from "../client/src/lib/handTracking";
+import { HAND_TRACKING_WASM_ASSET, isBenignMediaPipeLog, normalizeHandTrackingError, pickIndexFingertip } from "../client/src/lib/handTracking";
 
 describe("index fingertip tracking", () => {
   it("selects landmark 8 and clamps its normalized position", () => {
@@ -11,6 +11,8 @@ describe("index fingertip tracking", () => {
 
   it("uses the app-local WASM runtime and normalizes aborted failures", () => {
     expect(HAND_TRACKING_WASM_ASSET).toBe("/mediapipe/wasm");
+    expect(isBenignMediaPipeLog("INFO: Created TensorFlow Lite XNNPACK delegate for CPU.")).toBe(true);
+    expect(isBenignMediaPipeLog("Aborted()")).toBe(false);
     expect(normalizeHandTrackingError(new Error("Aborted() - memory access"))).toContain("Reload once");
     expect(normalizeHandTrackingError(new Error("network request failed"))).toContain("network connection");
   });

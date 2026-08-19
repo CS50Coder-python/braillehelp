@@ -234,4 +234,11 @@
 - [x] Serve stable local MediaPipe WASM assets and harden detector initialization.
 - [x] Contain runtime aborts so they do not surface as uncaught console failures.
 - [x] Add regression coverage for local asset configuration and abort recovery.
+- [x] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main; GitHub main is now 0351ee1.
+
+# Bug Fix — CPU WASM Abort and XNNPACK Log Noise
+
+- [x] Trace the CPU WASM abort and debug-collector treatment of XNNPACK informational output.
+- [x] Implement safer detector startup and contain backend console noise without hiding real application errors.
+- [x] Add regression coverage for abort normalization and benign XNNPACK log handling.
 - [ ] Run checks/build/browser validation, save a checkpoint, and synchronize the repair to braillehelp main.

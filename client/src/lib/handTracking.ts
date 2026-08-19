@@ -7,16 +7,32 @@ export const HAND_TRACKING_WASM_ASSET = "/mediapipe/wasm";
 
 let detectorPromise: Promise<HandLandmarker> | null = null;
 
+export function isBenignMediaPipeLog(value: unknown) {
+  return /INFO:\s*Created TensorFlow Lite XNNPACK delegate for CPU/i.test(String(value ?? ""));
+}
+
 async function createDetector(delegate: "GPU" | "CPU") {
-  const vision = await FilesetResolver.forVisionTasks(HAND_TRACKING_WASM_ASSET);
-  return HandLandmarker.createFromOptions(vision, {
+  const originalConsoleError = typeof console !== "undefined" ? console.error : null;
+  if (originalConsoleError) {
+    console.error = (...args: unknown[]) => {
+      const text = args.map(String).join(" ");
+      if (isBenignMediaPipeLog(text)) return;
+      originalConsoleError(...args);
+    };
+  }
+  try {
+    const vision = await FilesetResolver.forVisionTasks(HAND_TRACKING_WASM_ASSET);
+    return await HandLandmarker.createFromOptions(vision, {
     baseOptions: { modelAssetPath: MODEL_ASSET, delegate },
     runningMode: "VIDEO",
     numHands: 1,
     minHandDetectionConfidence: 0.55,
     minHandPresenceConfidence: 0.55,
-    minTrackingConfidence: 0.5,
-  });
+      minTrackingConfidence: 0.5,
+    });
+  } finally {
+    if (originalConsoleError) console.error = originalConsoleError;
+  }
 }
 
 export function normalizeHandTrackingError(error: unknown) {
