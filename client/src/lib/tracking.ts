@@ -48,10 +48,15 @@ export function stabilizeMotionPoint(previous: { x: number; y: number } | null, 
 
 export type VisualCandidate = { x: number; y: number; confidence: number; detected: boolean };
 
-/** Acquires a persistent warm/high-contrast foreground candidate inside the camera frame. This is a fallback for devices where landmark WASM cannot initialize. */
+/** Acquires a compact, persistent warm/high-contrast foreground candidate inside the camera frame. */
 export function estimateVisualCandidate(frame: Uint8ClampedArray, width: number, height: number, previous: { x: number; y: number } | null = null): VisualCandidate {
-  const points: Array<{ x: number; y: number; weight: number }> = [];
-  for (let y = 0; y < height; y += 2) for (let x = 0; x < width; x += 2) {
+  const step = 2;
+  const gridWidth = Math.ceil(width / step);
+  const gridHeight = Math.ceil(height / step);
+  const mask = new Uint8Array(gridWidth * gridHeight);
+  for (let gy = 0; gy < gridHeight; gy++) for (let gx = 0; gx < gridWidth; gx++) {
+    const x = Math.min(width - 1, gx * step);
+    const y = Math.min(height - 1, gy * step);
     const index = (y * width + x) * 4;
     const r = frame[index] / 255;
     const g = frame[index + 1] / 255;
@@ -59,19 +64,54 @@ export function estimateVisualCandidate(frame: Uint8ClampedArray, width: number,
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const chroma = max - min;
-    const warm = (r > b * 1.04 && g > b * 1.01 && chroma > 0.05 && max > 0.14) || (chroma > 0.16 && max > 0.2);
-    if (!warm) continue;
-    const nx = x / Math.max(1, width - 1);
-    const ny = y / Math.max(1, height - 1);
-    const distance = previous ? Math.hypot(nx - previous.x, ny - previous.y) : 0;
-    const weight = (0.5 + chroma) * (previous ? Math.max(0.05, 1 - distance * 1.8) : 1);
-    points.push({ x: nx, y: ny, weight });
+    const fingertipLike = max > 0.68 && chroma > 0.12 && ((r > b * 1.08 && g > b * 1.02) || chroma > 0.22);
+    if (fingertipLike) mask[gy * gridWidth + gx] = 1;
   }
-  if (points.length < 18) return { x: previous?.x ?? 0, y: previous?.y ?? 0.5, confidence: 0, detected: false };
-  const weightTotal = points.reduce((sum, point) => sum + point.weight, 0);
-  const x = points.reduce((sum, point) => sum + point.x * point.weight, 0) / weightTotal;
-  const y = points.reduce((sum, point) => sum + point.y * point.weight, 0) / weightTotal;
-  return { x, y, confidence: Math.min(0.82, 0.35 + points.length / 700), detected: true };
+  const seen = new Uint8Array(mask.length);
+  const components: Array<{ x: number; y: number; size: number; compactness: number }> = [];
+  for (let start = 0; start < mask.length; start++) {
+    if (!mask[start] || seen[start]) continue;
+    const queue = [start];
+    seen[start] = 1;
+    let sumX = 0;
+    let sumY = 0;
+    let minX = gridWidth;
+    let minY = gridHeight;
+    let maxX = 0;
+    let maxY = 0;
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const index = queue[cursor];
+      const gx = index % gridWidth;
+      const gy = Math.floor(index / gridWidth);
+      sumX += gx;
+      sumY += gy;
+      minX = Math.min(minX, gx);
+      minY = Math.min(minY, gy);
+      maxX = Math.max(maxX, gx);
+      maxY = Math.max(maxY, gy);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const nx = gx + dx;
+        const ny = gy + dy;
+        if (nx < 0 || ny < 0 || nx >= gridWidth || ny >= gridHeight) continue;
+        const next = ny * gridWidth + nx;
+        if (mask[next] && !seen[next]) { seen[next] = 1; queue.push(next); }
+      }
+    }
+    if (queue.length >= 8) {
+      const boxArea = Math.max(1, (maxX - minX + 1) * (maxY - minY + 1));
+      components.push({ x: sumX / queue.length / Math.max(1, gridWidth - 1), y: sumY / queue.length / Math.max(1, gridHeight - 1), size: queue.length, compactness: queue.length / boxArea });
+    }
+  }
+  if (!components.length) return { x: previous?.x ?? 0, y: previous?.y ?? 0.5, confidence: 0, detected: false };
+  const ranked = components.map((component) => {
+    const distance = previous ? Math.hypot(component.x - previous.x, component.y - previous.y) : 0;
+    const proximity = previous ? Math.max(0, 1 - distance * 2.4) : 0.5;
+    const sizePenalty = Math.min(1, component.size / Math.max(8, gridWidth * gridHeight * 0.12));
+    return { component, score: component.compactness * 0.55 + proximity * 0.35 + sizePenalty * 0.1 };
+  }).sort((a, b) => b.score - a.score);
+  const selected = ranked[0].component;
+  const confidence = Math.min(0.9, 0.4 + selected.compactness * 0.35 + Math.min(0.2, selected.size / 500));
+  return { x: selected.x, y: selected.y, confidence, detected: confidence >= 0.48 };
 }
 
 export function estimateHorizontalPosition(frame: Uint8ClampedArray, previous: Uint8ClampedArray | null, width: number, threshold = 28) {

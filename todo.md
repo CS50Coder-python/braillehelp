@@ -337,3 +337,15 @@
 - [x] Correct the target mapping so the visible green marker follows the camera-space fingertip position.
 - [x] Add regression coverage for mirrored coordinates, aspect-ratio mapping, and calibration boundaries.
 - [x] Run tests, TypeScript, build, browser verification, save a checkpoint, and push the alignment repair to braillehelp main.
+
+# Bug Fix — Fingertip-Specific Tracking Reliability
+
+- [x] Inspect the visual candidate and stabilization pipeline for false locks on background or whole-frame motion.
+- [x] Tighten candidate selection and continuity so the marker prefers a persistent compact fingertip-like target near the prior point.
+- [x] Add regression coverage for false-lock rejection, compact-candidate preference, and stable path continuity.
+- [x] Run tests, TypeScript, build, browser verification, save a checkpoint, and push the repair to braillehelp main.
+
+# Delivery Retry — GitHub Push and Publish Readiness
+
+- [ ] Retry pushing the validated fingertip-specific tracking repair to braillehelp main after connector re-authentication.
+- [ ] Provide a direct publish-readiness verdict distinguishing code readiness from physical-device camera validation.

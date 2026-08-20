@@ -49,6 +49,45 @@ describe("camera tracking helpers", () => {
     expect(estimateVisualCandidate(frame, 20, 12).detected).toBe(false);
   });
 
+  it("prefers a compact fingertip-like component over broad warm background", () => {
+    const width = 40;
+    const height = 24;
+    const frame = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const index = (y * width + x) * 4;
+      frame[index] = 150;
+      frame[index + 1] = 90;
+      frame[index + 2] = 50;
+      frame[index + 3] = 255;
+    }
+    for (let y = 8; y < 16; y++) for (let x = 27; x < 35; x++) {
+      const index = (y * width + x) * 4;
+      frame[index] = 255;
+      frame[index + 1] = 235;
+      frame[index + 2] = 30;
+    }
+    const result = estimateVisualCandidate(frame, width, height, { x: 0.78, y: 0.5 });
+    expect(result.detected).toBe(true);
+    expect(result.x).toBeGreaterThan(0.62);
+    expect(result.y).toBeGreaterThan(0.25);
+    expect(result.y).toBeLessThan(0.75);
+  });
+
+  it("rejects a diffuse warm frame instead of claiming fingertip evidence", () => {
+    const width = 40;
+    const height = 24;
+    const frame = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const index = (y * width + x) * 4;
+      frame[index] = 150;
+      frame[index + 1] = 90;
+      frame[index + 2] = 50;
+      frame[index + 3] = 255;
+    }
+    const result = estimateVisualCandidate(frame, width, height);
+    expect(result.detected).toBe(false);
+  });
+
   it("does not detect a static frame", () => {
     const frame = new Uint8ClampedArray(4 * 4 * 4);
     const result = estimateMotionPoint(frame, new Uint8ClampedArray(frame), 4, 4);
