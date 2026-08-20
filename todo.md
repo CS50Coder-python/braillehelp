@@ -320,4 +320,13 @@
 - [x] Make the tracking frame and metrics truthful: no unsupported 0%, 100%, WPM, pause, reread, or skip claims.
 - [x] Add judge-facing setup guidance and a concise demo mode/protocol without changing privacy safeguards.
 - [x] Update the README and submission checklist with honest camera limitations and the reliable demo sequence.
-- [ ] Run full checks/build/browser validation, save a checkpoint, and push the judge-readiness upgrade to braillehelp main.
+- [x] Run full checks/build/browser validation, save a checkpoint, and push the judge-readiness upgrade to braillehelp main; GitHub main is now d5304f1.
+
+# 8.5/10 Hackathon Contender Upgrade
+
+- [x] Add a reproducible judge-demo mode with explicit camera setup, acquisition quality, and controlled-path guidance.
+- [x] Make the live evidence trail judge-visible: stable marker, path trail, visited regions, event timeline, and metric provenance.
+- [x] Strengthen the AI-to-teacher narrative with a clear passage reference, confidence/uncertainty, and actionable insight summary.
+- [x] Clean judge-facing dashboard presentation so stale or low-evidence sessions cannot dominate the first impression.
+- [x] Add regression tests for the new demo-mode, provenance, and teacher-insight UI contracts.
+- [x] Run full checks, build, and browser verification; save a checkpoint and synchronize the upgrade to braillehelp main.
