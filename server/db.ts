@@ -94,6 +94,13 @@ export async function saveBrailleAnalysis(input: typeof brailleAnalyses.$inferIn
   await db.insert(brailleAnalyses).values(input);
 }
 
+export async function getLatestBrailleAnalysis(passageId: number, ownerUserId: number) {
+  const db = await getDb();
+  if (!db) return useMemoryStore() ? memory.analyses.filter((analysis) => analysis.passageId === passageId && analysis.ownerUserId === ownerUserId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null : null;
+  const rows = await db.select().from(brailleAnalyses).where(and(eq(brailleAnalyses.passageId, passageId), eq(brailleAnalyses.ownerUserId, ownerUserId))).orderBy(desc(brailleAnalyses.createdAt)).limit(1);
+  return rows[0] ?? null;
+}
+
 export async function saveOralReading(input: typeof oralReadings.$inferInsert) {
   const db = await getDb();
   if (!db) { if (!useMemoryStore()) throw new Error("Database is not configured"); const row = { ...input, id: memory.nextOralId++, createdAt: new Date() }; memory.oralReadings.push(row); return row.id; }
@@ -172,15 +179,7 @@ export async function executeStudentDeletionPlan(plan: readonly string[], input:
 
 export async function deleteSessionData(sessionId: number, ownerUserId: number) {
   const db = await getDb();
-  if (!db) {
-    if (!useMemoryStore()) throw new Error("Database is not configured");
-    const session = memory.sessions.find((item) => item.id === sessionId && item.ownerUserId === ownerUserId);
-    if (!session) return false;
-    memory.events = memory.events.filter((event) => event.sessionId !== sessionId);
-    memory.oralReadings = memory.oralReadings.filter((reading) => !(reading.sessionId === sessionId && reading.ownerUserId === ownerUserId));
-    memory.sessions = memory.sessions.filter((item) => item.id !== sessionId);
-    return true;
-  }
+  if (!db) throw new Error("Database is not configured");
   const session = await db.select().from(readingSessions).where(and(eq(readingSessions.id, sessionId), eq(readingSessions.ownerUserId, ownerUserId))).limit(1);
   if (!session[0]) return false;
   for (const step of buildSessionDeletionPlan(sessionId, ownerUserId)) {
@@ -193,20 +192,7 @@ export async function deleteSessionData(sessionId: number, ownerUserId: number) 
 
 export async function deleteStudentData(studentId: number, ownerUserId: number) {
   const db = await getDb();
-  if (!db) {
-    if (!useMemoryStore()) throw new Error("Database is not configured");
-    const student = memory.students.find((item) => item.id === studentId && item.ownerUserId === ownerUserId);
-    if (!student) return false;
-    const sessionIds = memory.sessions.filter((item) => item.studentId === studentId && item.ownerUserId === ownerUserId).map((item) => item.id);
-    const passageIds = memory.passages.filter((item) => item.studentId === studentId && item.ownerUserId === ownerUserId).map((item) => item.id);
-    memory.events = memory.events.filter((event) => !sessionIds.includes(event.sessionId));
-    memory.oralReadings = memory.oralReadings.filter((reading) => !(sessionIds.includes(reading.sessionId) && reading.ownerUserId === ownerUserId));
-    memory.sessions = memory.sessions.filter((item) => !sessionIds.includes(item.id));
-    memory.analyses = memory.analyses.filter((analysis) => !(passageIds.includes(analysis.passageId) && analysis.ownerUserId === ownerUserId));
-    memory.passages = memory.passages.filter((item) => !passageIds.includes(item.id));
-    memory.students = memory.students.filter((item) => item.id !== studentId);
-    return true;
-  }
+  if (!db) throw new Error("Database is not configured");
   const student = await db.select().from(students).where(and(eq(students.id, studentId), eq(students.ownerUserId, ownerUserId))).limit(1);
   if (!student[0]) return false;
   const sessions = await db.select({ id: readingSessions.id }).from(readingSessions).where(and(eq(readingSessions.studentId, studentId), eq(readingSessions.ownerUserId, ownerUserId)));
@@ -226,17 +212,8 @@ export async function deleteStudentData(studentId: number, ownerUserId: number) 
 
 export async function setStudentRetention(studentId: number, ownerUserId: number, retentionDays: number) {
   const db = await getDb();
+  if (!db) throw new Error("Database is not configured");
   const expiresAt = new Date(Date.now() + retentionDays * 86400000);
-  if (!db) {
-    if (!useMemoryStore()) throw new Error("Database is not configured");
-    const sessionIds = memory.sessions.filter((item) => item.studentId === studentId && item.ownerUserId === ownerUserId).map((item) => item.id);
-    for (const student of memory.students) if (student.id === studentId && student.ownerUserId === ownerUserId) Object.assign(student, { retentionDays, expiresAt });
-    for (const passage of memory.passages) if (passage.studentId === studentId && passage.ownerUserId === ownerUserId) Object.assign(passage, { retentionDays, expiresAt });
-    for (const session of memory.sessions) if (sessionIds.includes(session.id)) Object.assign(session, { retentionDays, expiresAt });
-    for (const reading of memory.oralReadings) if (sessionIds.includes(reading.sessionId) && reading.ownerUserId === ownerUserId) Object.assign(reading, { retentionDays, expiresAt });
-    for (const event of memory.events) if (sessionIds.includes(event.sessionId)) Object.assign(event, { retentionDays, expiresAt });
-    return expiresAt;
-  }
   await db.update(students).set({ retentionDays, expiresAt }).where(and(eq(students.id, studentId), eq(students.ownerUserId, ownerUserId)));
   await db.update(passages).set({ retentionDays, expiresAt }).where(and(eq(passages.studentId, studentId), eq(passages.ownerUserId, ownerUserId)));
   await db.update(readingSessions).set({ retentionDays, expiresAt }).where(and(eq(readingSessions.studentId, studentId), eq(readingSessions.ownerUserId, ownerUserId)));
@@ -246,15 +223,7 @@ export async function setStudentRetention(studentId: number, ownerUserId: number
 
 export async function purgeExpiredData(ownerUserId: number) {
   const db = await getDb();
-  if (!db) {
-    if (!useMemoryStore()) throw new Error("Database is not configured");
-    const now = new Date();
-    const expiredSessionIds = memory.sessions.filter((item) => item.ownerUserId === ownerUserId && item.expiresAt && item.expiresAt <= now).map((item) => item.id);
-    for (const sessionId of expiredSessionIds) await deleteSessionData(sessionId, ownerUserId);
-    const expiredStudentIds = memory.students.filter((item) => item.ownerUserId === ownerUserId && item.expiresAt && item.expiresAt <= now).map((item) => item.id);
-    for (const studentId of expiredStudentIds) await deleteStudentData(studentId, ownerUserId);
-    return { sessions: expiredSessionIds.length, students: expiredStudentIds.length };
-  }
+  if (!db) throw new Error("Database is not configured");
   const expiredSessions = await db.select({ id: readingSessions.id }).from(readingSessions).where(and(eq(readingSessions.ownerUserId, ownerUserId), lte(readingSessions.expiresAt, new Date())));
   for (const session of expiredSessions) await deleteSessionData(session.id, ownerUserId);
   await db.delete(trackingEvents).where(lte(trackingEvents.expiresAt, new Date()));

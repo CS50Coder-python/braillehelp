@@ -54,3 +54,11 @@ Use a real phone over HTTPS, a clean Braille page with even lighting, and a shor
 ## Claims to avoid
 
 Do not claim clinical accuracy, automatic diagnosis, Braille-specific normative validity, perfect hand tracking, or that speed alone determines reading ability. Describe the project as a research/demo prototype that supports teacher review and requires validation on representative devices and users.
+
+## 9/10 Judge-Proof Coverage Checklist
+
+BrailleHelp’s strongest demonstration is a three-minute evidence chain. Begin with the accessibility problem, upload a Braille image, and show that the AI returns a readable passage reference with confidence, visible-cell and line counts, and uncertainty warnings. Use that analyzed passage to enter the camera session, complete all three calibration heights, and show the camera preview with the green tracking target, live trail, tracker state, and visited-region count.
+
+During the read, deliberately demonstrate one sustained pause, a leave-and-return reread, and a jump across a region. The session should show the visible path evidence that supports each signal rather than presenting unexplained counters. Finish on the teacher takeaway, which pairs speed with an age/grade reference while explicitly requiring accuracy, comprehension, passage difficulty, and accommodations to be reviewed. The product claim is **AI Braille analysis plus browser-based visual path tracking and teacher review support**; it is not clinical fingertip recognition, a diagnosis, or an automated placement decision.
+
+The submission package should include the hosted project URL, the public `CS50Coder-python/braillehelp` repository, the MIT license, this README and submission guide, a roughly three-minute demo video, and the completed Devpost entry. Before recording, use a fixed phone position, even lighting, a visible fingertip, and the yellow tracking area. Test the exact phone and browser used in the video; if the target does not stay on the fingertip, do not describe the session as finished fingertip recognition.

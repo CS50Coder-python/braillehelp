@@ -347,5 +347,16 @@
 
 # Delivery Retry — GitHub Push and Publish Readiness
 
-- [ ] Retry pushing the validated fingertip-specific tracking repair to braillehelp main after connector re-authentication.
-- [ ] Provide a direct publish-readiness verdict distinguishing code readiness from physical-device camera validation.
+- [x] Retry pushing the validated fingertip-specific tracking repair to braillehelp main after connector re-authentication; remote main is 9762f7f.
+- [x] Provide a direct publish-readiness verdict distinguishing code readiness from physical-device camera validation.
+
+# 9/10 Judge Requirement Coverage Upgrade
+
+- [x] Audit and explicitly surface reliable live-tracking guidance and truthful status states.
+- [x] Surface AI passage confidence/uncertainty and the analyzed reference used by the session.
+- [x] Make pause, reread, and skipped-region evidence visibly tied to the path and explain how each signal is derived.
+- [x] Strengthen the teacher takeaway with speed context, accuracy/comprehension caveats, and a non-diagnostic instructional next step.
+- [x] Add a clear differentiation narrative: AI understands the page, camera observes the path, teachers receive actionable evidence.
+- [x] Add submission-facing guidance for the demo video, hosted URL, repository, MIT license, README, and honest scope claims.
+- [x] Add regression coverage for all judge-facing requirement surfaces.
+- [x] Run full validation, save a checkpoint, and push the complete requirement-coverage upgrade to braillehelp main.

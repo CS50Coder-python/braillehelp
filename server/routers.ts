@@ -9,7 +9,7 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { storageGetSignedUrl, storagePut } from "./storage";
 import { ENV } from "./_core/env";
 import {
-  addTrackingEvents, createPassage, createReadingSession, createStudent, deleteSessionData, deleteStudentData, getClassroomSummary, getOralReading, getPassage,
+  addTrackingEvents, createPassage, createReadingSession, createStudent, deleteSessionData, deleteStudentData, getClassroomSummary, getLatestBrailleAnalysis, getOralReading, getPassage,
   getRecentSessions, getSessionWithEvents, getStudents, purgeExpiredData, saveBrailleAnalysis, saveOralReading, setStudentRetention, updatePassageText, updateReadingSession,
 } from "./db";
 
@@ -118,7 +118,7 @@ export const appRouter = router({
     }),
   }),
   reading: router({
-    passage: protectedProcedure.input(z.object({ passageId: z.number().int().positive() })).query(({ input, ctx }) => getPassage(input.passageId, ctx.user.id)),
+    passage: protectedProcedure.input(z.object({ passageId: z.number().int().positive() })).query(async ({ input, ctx }) => { const passage = await getPassage(input.passageId, ctx.user.id); if (!passage) return null; const analysis = await getLatestBrailleAnalysis(input.passageId, ctx.user.id); return { ...passage, analysis: analysis ? { confidence: analysis.confidence, brailleStandard: analysis.brailleStandard, warnings: analysis.warnings, cellCount: analysis.cellCount, lineCount: analysis.lineCount } : null }; }),
     create: protectedProcedure.input(z.object({ passageId: z.number().int().positive().optional(), studentId: z.number().int().positive().optional() })).mutation(async ({ input, ctx }) => { const passage = input.passageId ? await getPassage(input.passageId, ctx.user.id) : null; if (input.passageId && !passage) throw new TRPCError({ code: "NOT_FOUND", message: "Passage not found." }); return createReadingSession({ ownerUserId: ctx.user.id, passageId: input.passageId ?? null, studentId: input.studentId ?? passage?.studentId ?? null, status: "ready" }); }),
     calibrate: protectedProcedure.input(z.object({ sessionId: z.number().int().positive(), calibrationVersion: z.string().max(40), calibrationHeight: z.number().min(0).max(10), calibrationConfidence: z.number().min(0).max(1), consentCamera: z.boolean(), consentAudio: z.boolean() })).mutation(async ({ input, ctx }) => { await requireOwnedSession(input.sessionId, ctx.user.id); await updateReadingSession(input.sessionId, { calibrationVersion: input.calibrationVersion, calibrationHeight: input.calibrationHeight, calibrationConfidence: input.calibrationConfidence, consentCamera: input.consentCamera ? 1 : 0, consentAudio: input.consentAudio ? 1 : 0 }); return { success: true } as const; }),
     start: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => { const detail = await requireOwnedSession(input.sessionId, ctx.user.id); if (!detail.session.consentCamera) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Complete camera consent and calibration first." }); await updateReadingSession(input.sessionId, { status: "running", startedAt: new Date() }); return { success: true } as const; }),

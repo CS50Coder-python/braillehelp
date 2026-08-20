@@ -19,5 +19,9 @@ describe("judge-readiness camera UI contract", () => {
     expect(homeSource).toContain("RECENT COMPLETED READS");
     expect(homeSource).toContain('session.status === "completed"');
     expect(homeSource).toContain("TEACHER TAKEAWAY · REVIEW WITH CONTEXT");
+    expect(homeSource).toContain("WHY THIS IS DIFFERENT");
+    expect(homeSource).toContain("AI passage reference");
+    expect(homeSource).toContain("Camera path evidence");
+    expect(homeSource).toContain("Speed context paired with accuracy and comprehension caveats.");
   });
 });
