@@ -330,3 +330,10 @@
 - [x] Clean judge-facing dashboard presentation so stale or low-evidence sessions cannot dominate the first impression.
 - [x] Add regression tests for the new demo-mode, provenance, and teacher-insight UI contracts.
 - [x] Run full checks, build, and browser verification; save a checkpoint and synchronize the upgrade to braillehelp main.
+
+# Bug Fix — Green Tracking Target Alignment
+
+- [x] Inspect video mirroring, object-fit/aspect-ratio, overlay coordinates, and calibration transforms for marker drift.
+- [x] Correct the target mapping so the visible green marker follows the camera-space fingertip position.
+- [x] Add regression coverage for mirrored coordinates, aspect-ratio mapping, and calibration boundaries.
+- [x] Run tests, TypeScript, build, browser verification, save a checkpoint, and push the alignment repair to braillehelp main.
